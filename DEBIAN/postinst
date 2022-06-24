@@ -1,0 +1,28 @@
+#!/bin/bash
+
+ver=1.6
+
+a2enmod ssl
+a2dissite 000-default
+a2ensite nems-dashboard
+a2enmod rewrite
+
+# Change Apache footer
+a2enmod security2
+a2enconf security
+/bin/sed -i~ '/SecServerSignature/d' /etc/apache2/conf-available/security.conf
+echo "SecServerSignature NEMS_Linux/$ver" >> /etc/apache2/conf-available/security.conf
+
+# Increase upload size for background images
+  if [[ -e /etc/php/*/phpdbg/php.ini ]]; then
+    /bin/sed -i '/post_max_size =/c\; NEMS00001\npost_max_size = 20M' /etc/php/*/phpdbg/php.ini
+    /bin/sed -i '/upload_max_filesize =/c\upload_max_filesize = 16M' /etc/php/*/phpdbg/php.ini
+  fi
+  if [[ -e /etc/php/*/phpdbg/php.ini ]]; then
+    /bin/sed -i '/post_max_size =/c\; NEMS00001\npost_max_size = 20M' /etc/php/*/phpdbg/php.ini
+    /bin/sed -i '/upload_max_filesize =/c\upload_max_filesize = 16M' /etc/php/*/phpdbg/php.ini
+  fi
+
+chown -R www-data:www-data /var/www/html/
+
+/bin/systemctl restart apache2
