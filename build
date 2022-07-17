@@ -8,7 +8,7 @@ if [[ $EUID == 0 ]]; then
 fi
 
 dpkg-deb --build debpack ${package}.deb
-mv ${package}.deb /srv/repos/apt/nems/
-cd /srv/repos/apt/nems/
+mv ${package}.deb /home/admin/repos/apt/nems/
+cd /home/admin/repos/apt/nems/
 reprepro includedeb 1.6 ${package}.deb
 rm ${package}.deb

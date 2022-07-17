@@ -12,7 +12,7 @@ if (is_array($conf)) { // Load the existing conf data
 if ($php_agent_key == '') die('Missing passphrase. Did you set one in NEMS SST?');
 
 $nemsver = shell_exec('/usr/local/bin/nems-info nemsver');
-$nemsagentver = '1.3';
+$nemsagentver = '1.4';
 
 $data = '<' . '?php
   // This is the NEMS PHP Server Agent v' . $nemsagentver . '
@@ -26,6 +26,7 @@ $data = '<' . '?php
 
   if (isset($_POST[\'check\'])) {
     $check = filter_var($_POST[\'check\'], FILTER_SANITIZE_STRING);
+    $swtch = filter_var($_POST['switch'], FILTER_SANITIZE_STRING); // using $swtch instead of $switch as switch is a function (though the POST is 'switch')
   } else {
     $check = "";
   }
@@ -66,38 +67,9 @@ $data = '<' . '?php
     $data[\'mem\'][\'used\'] = $data[\'mem\'][\'total\'] - $data[\'mem\'][\'free\'];
   }
 
-  //hdd stat
-  if ($check == \'.\') {
-    $mountpoint = \'.\';
-    $df = disk_free_space($mountpoint);
-    $dt = disk_total_space($mountpoint);
-    if ($df == \'\') {
-      $data[\'storage\'][$mountpoint][\'locked\'] = 1;
-    } else {
-      $data[\'storage\'][$mountpoint][\'path\'] = getcwd();
-      $data[\'storage\'][$mountpoint][\'free\'] = round($df / 1024 / 1024 / 1024, 2);
-      $data[\'storage\'][$mountpoint][\'total\'] = round($dt / 1024 / 1024/ 1024, 2);
-      $data[\'storage\'][$mountpoint][\'used\'] = $data[\'storage\'][$mountpoint][\'total\'] - $data[\'storage\'][$mountpoint][\'free\'];
-      $data[\'storage\'][$mountpoint][\'percent\'] = round(sprintf(\'%.2f\',($data[\'storage\'][$mountpoint][\'used\'] / $data[\'storage\'][$mountpoint][\'total\']) * 100), 2);
-    }
-  }
-
-  if ($check == \'/\') {
+  if ($check == \'disk\') {
     $mountpoint = \'/\';
-    $df = disk_free_space($mountpoint);
-    $dt = disk_total_space($mountpoint);
-    if ($df == \'\') {
-      $data[\'storage\'][$mountpoint][\'locked\'] = 1;
-    } else {
-      $data[\'storage\'][$mountpoint][\'free\'] = round($df / 1024 / 1024 / 1024, 2);
-      $data[\'storage\'][$mountpoint][\'total\'] = round($dt / 1024 / 1024/ 1024, 2);
-      $data[\'storage\'][$mountpoint][\'used\'] = $data[\'storage\'][$mountpoint][\'total\'] - $data[\'storage\'][$mountpoint][\'free\'];
-      $data[\'storage\'][$mountpoint][\'percent\'] = round(sprintf(\'%.2f\',($data[\'storage\'][$mountpoint][\'used\'] / $data[\'storage\'][$mountpoint][\'total\']) * 100), 2);
-    }
-  }
-
-  if ($check == \'var\') {
-    $mountpoint = \'/var\';
+    if (strlen($swtch) > 0) $mountpoint = $swtch;
     $df = disk_free_space($mountpoint);
     $dt = disk_total_space($mountpoint);
     if ($df == \'\') {
