@@ -125,8 +125,8 @@
         ?>
 
 
-            <div class="row">
-              <div class="container" style="margin-top: 40px;">
+            <div class="row" style="display:none;">
+              <div style="margin-top: 40px;">
 
                 <div class="col-md-12 text-center img-center">
                   <h3 style="font-size: 0.6em;">Product Of:<a href="https://Category5.TV/" target="_blank"><img src="/img/sponsors/cat5tv_network.webp" class="img-responsive" style="max-height: 30px;" /></a></h3>

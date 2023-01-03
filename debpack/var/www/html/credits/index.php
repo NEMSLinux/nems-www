@@ -46,7 +46,7 @@ window.findKeyframesRule = function (rule) {
 	line-height: 1;
 	text-align: center;
 	color: #fff;
-	animation: 170s credits linear; /* Adjust length to control speed. Ideally about 26 seconds longer than the song. */
+	animation: 150s credits linear; /* Adjust length to control speed. Ideally about 26 seconds longer than the song. */
     }
     .scroller img {
       margin: 0 auto;
@@ -194,64 +194,23 @@ window.findKeyframesRule = function (rule) {
 
             <h1>NagiosTV</h1><h2>By Chris Carey</h2><h3><a href="https://github.com/chriscareycode" target="_blank">github.com/chriscareycode</a></h3>
 
-            <h1>Sponsored By</h1>
-            <a href="https://www.rnitsolutions.com/" target="_blank"><img src="assets/rnit_logo_full_dark.png" class="img-responsive" style="max-height: 80px;" /></a></h1>
-
             <h1><b>I could not develop NEMS Linux without the financial support of its users.</b><br />The following <a href="https://patreon.com/nems" target="_blank">Patrons</a> have opted to have their name listed in the credits.</h1>
 
 <?php
-$list = explode(PHP_EOL, '
-Patrick Kersten
-Marc D&ouml;rseln
-Dave Harman
-Bill Marshall
-Aaron Tringle
-Steve Hudnall
-IT Cyber Solutions
-Natacha Norman
-David Klindt
-Wolfgang Friedl
-Jeff Conaway
-Don Jenkins
-Marco Antonini
-Jessica K. Litwin
-Matthew Mattox
-Premium | Fischer-ICT
-Steve Thompson
-Jiffy
-Larry Getz
-Coquille Indian Tribe
-Jarrod Andrews
-Dennis Bailey
-Brian Darnell
-SystemOfADL
-Tony Browne
-Steven Beukes
-Rob Thomas
-Heiko Gerstung
-Jerold Von Hemel
-Nato Riley
-Joe Luzzi
-Xander Brennan
-Sam Lakhani
-John Sheftic
-James Rawls
-Bronson Trevor
-Tim Banks
-');
-sort($list);
+  $list = file('credits.txt');
+  sort($list);
 
-foreach ($list as $name) {
-  if (trim(strlen($name)) > 0) {
-    echo '<h4>' . trim($name) . '</h4>' . PHP_EOL;
+  foreach ($list as $name) {
+    if (trim(strlen($name)) > 0) {
+      echo '<h4>' . trim($name) . '</h4>' . PHP_EOL;
+    }
   }
-}
 ?>
 
             <h2 style="margin-top: 50px;">Platform Support</h2>
             <h3>Big thanks to the following for their contributions to open source, which<br /> helped me greatly in my quest to port NEMS Linux to many platforms.</h3>
 
-            <h1>Raspberry Pi</h1><h2>Raspbian</h2>
+            <h1>Raspberry Pi</h1><h2>Raspberry Pi Foundation</h2>
             <h1>PINE64</h1><h2>Ayufan</h2>
             <h1>ODROID</h1><h2>Meveric, mad_ady</h2>
             <h1>ODROID, FriendlyElec, ASUS, OrangePi</h1><h2>Armbian</h2>
@@ -268,8 +227,10 @@ foreach ($list as $name) {
             <h2 style="margin-top: 20px;">baggins</h2>
             <h2 style="margin-top: 20px;">Vincenzo Di Iorio</h2>
 
-            <h1 style="margin-top: 20px;font-size: 0.5em;line-height: 1.1em;"><b>Note:</b> I only just recently started keeping a list.<br />If you don't see your name yet, it does not mean you are not appreciated.<br />Please message me on Discord.</h1>
+            <h1 style="margin-top: 20px;font-size: 0.5em;line-height: 1.1em;">If you don't see your name, it does not mean you are not appreciated.<br />Please message me on Discord.</h1>
 
+
+            <h1>NEMS Linux Logo</h1><h2>By Christa Wells</h2>
 
             <h1>"Movie Score"</h1><h2>By Jeffrey Peterson</h2>
             <h1>"Epic Inspiration"</h1><h2>By Veaceslav Draganov</h2>

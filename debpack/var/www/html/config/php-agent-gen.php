@@ -12,7 +12,7 @@ if (is_array($conf)) { // Load the existing conf data
 if ($php_agent_key == '') die('Missing passphrase. Did you set one in NEMS SST?');
 
 $nemsver = shell_exec('/usr/local/bin/nems-info nemsver');
-$nemsagentver = '1.4';
+$nemsagentver = '1.5';
 
 $data = '<' . '?php
   // This is the NEMS PHP Server Agent v' . $nemsagentver . '
@@ -26,7 +26,7 @@ $data = '<' . '?php
 
   if (isset($_POST[\'check\'])) {
     $check = filter_var($_POST[\'check\'], FILTER_SANITIZE_STRING);
-    $swtch = filter_var($_POST['switch'], FILTER_SANITIZE_STRING); // using $swtch instead of $switch as switch is a function (though the POST is 'switch')
+    $switch = filter_var($_POST[\'switch\'], FILTER_SANITIZE_STRING);
   } else {
     $check = "";
   }
@@ -69,10 +69,14 @@ $data = '<' . '?php
 
   if ($check == \'disk\') {
     $mountpoint = \'/\';
-    if (strlen($swtch) > 0) $mountpoint = $swtch;
+    if (strlen($switch) > 0) $mountpoint = $switch;
+    $data[\'storage\'][$mountpoint][\'mounted\'] = 1;
     $df = disk_free_space($mountpoint);
     $dt = disk_total_space($mountpoint);
-    if ($df == \'\') {
+    $mounted = shell_exec(\'grep -s "\' . rtrim($mountpoint, \'/\') . \' " /proc/mounts\'); // Error if not mounted
+    if (strlen($mounted) == 0) {
+      $data[\'storage\'][$mountpoint][\'mounted\'] = 0;
+    } elseif ($df == \'\') {
       $data[\'storage\'][$mountpoint][\'locked\'] = 1;
     } else {
       $data[\'storage\'][$mountpoint][\'free\'] = round($df / 1024 / 1024 / 1024, 2);
