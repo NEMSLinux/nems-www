@@ -7,85 +7,63 @@
   include('/var/www/html/inc/header.php');
   $online = shell_exec('/usr/local/bin/nems-info online');
 ?>
-	<!-- Promo block BEGIN -->
-	<section class="promo-section" id="intro">
-		<!-- Fullscreen Static Image BEGIN -->
-		<div class="fullscreen-static-image fullheight">
-			<!-- Promo Content BEGIN -->
-			<div class="container valign__middle">
-				<div class="row">
-				  <div class="col-sm-10 col-sm-offset-1 text-center-xs">
-					<div class="promo-text">
-					<div class="promo-next">
+        <!-- Promo block BEGIN -->
+        <section class="promo-section" id="intro">
+                <!-- Fullscreen Static Image BEGIN -->
+                <div class="fullscreen-static-image fullheight">
+                        <!-- Promo Content BEGIN -->
+                        <div class="container valign__middle">
+                                <div class="row">
+                                  <div class="col-sm-10 col-sm-offset-1 text-center-xs">
+                                        <div class="promo-text">
+                                        <div class="promo-next">
 
 
 
-	<section id="graphs" class="about-section">
+        <section id="graphs" class="about-section">
 
 
 
-		<div class="parallax-counter-v4 parallaxBg1" id="facts">
-						<span style="padding:10px 20px;"><span class="color-green">N</span>EMS Linux</span><br />
-						<span style="color: #aaa;font-size:0.6em;">For <?php $platform = ver('platform'); echo $platform->name; ?></span><br />
-						<?php if (strtoupper($alias) != 'NEMS') echo '<span style="color: orange;font-size:0.8em;">' . $alias . '</span>'; ?>
-						<?php if (ver('nems-available') > ver('nems')) echo '<div class="alert alert-warning fade in"><strong>Note:</strong> NEMS ' . ver('nems-available') . ' is available.<br /><a class="btn btn-u rounded" href="https://docs.nemslinux.com/en/latest/changelogs/' . ver('nems-branch-avail') . '.html" target="_blank">Changelog</a></div>'; ?>
-						<?php if ($online == 0) echo '<div class="alert alert-danger fade in"><strong>Warning:</strong> NEMS can\'t connect to the update servers. Please make sure Internet is configured for your NEMS server and that github.com is not being blocked by your firewall/proxy.</div>'; ?>
-						<br /><br />
-<?php /*			<div class="container content-sm">
+                <div class="parallax-counter-v4 parallaxBg1" id="facts">
+                                                <span style="padding:10px 20px;"><span class="color-green">N</span>EMS Linux</span><br />
+                                                <span style="color: #aaa;font-size:0.6em;">For <?php $platform = ver('platform'); echo $platform->name; ?></span><br />
+                                                <?php if (strtoupper($alias) != 'NEMS') echo '<span style="color: orange;font-size:0.8em;">' . $alias . '</span>'; ?>
+                                                <?php if (ver('nems-available') > ver('nems')) echo '<div class="alert alert-warning fade in"><strong>Note:</strong> NEMS ' . ver('nems-available') . ' is available.<br /><a class="btn btn-u rounded" href="https://docs.nemslinux.com/en/latest/changelogs/' . ver('nems-branch-avail') . '.html" target="_blank">Changelog</a></div>'; ?>
+                                                <?php if ($online == 0) echo '<div class="alert alert-danger fade in"><strong>Warning:</strong> NEMS can\'t connect to the update servers. Please make sure Internet is configured for your NEMS server and that github.com is not being blocked by your firewall/proxy.</div>'; ?>
+                                                <br /><br />
+<?php /*                        <div class="container content-sm">
 */
 ?>
 <div>
-				<div class="row hidden-xs">
+                                <div class="row hidden-xs">
 
-					<div class="col-md-3 col-xs-6 md-margin-bottom-50">
+                                        <div class="col-md-3 col-xs-6 md-margin-bottom-50">
 
-						<i class="fa fa-bar-chart"></i>
+                                                <i class="fa fa-bar-chart"></i>
 
-						<span class="counter"><?php $load = sys_getloadavg(); echo $load[1]; ?></span>
+                                                <span class="counter"><?php $load = sys_getloadavg(); echo $load[1]; ?></span>
 
-						<h4>5 Minute Load Average</h4>
+                                                <h4>5 Minute Load Average</h4>
 
-					</div>
+                                        </div>
 
-					<div class="col-md-3 col-xs-6 md-margin-bottom-50">
+                                        <div class="col-md-3 col-xs-6 md-margin-bottom-50">
 
-						<i class="fa fa-line-chart"></i>
+                                                <i class="fa fa-line-chart"></i>
 
-						<span class="counter"><?php $mem=get_server_memory_usage(); echo round($mem,2); ?></span>
+                                                <span class="counter"><?php $mem=get_server_memory_usage(); echo round($mem,2); ?></span>
 
-						<h4>% Memory Usage</h4>
+                                                <h4>% Memory Usage</h4>
 
-					</div>
+                                        </div>
 
-					<div class="col-md-3 col-xs-6">
+                                        <div class="col-md-3 col-xs-6">
 
-						<i class="fa fa-hdd-o"></i>
+                                                <i class="fa fa-hdd-o"></i>
 
-						<span class="counter"><?php
+                                                <span class="counter"><?php
 
-                $bytes = disk_total_space("/"); 
-
-                $si_prefix = array( 'B', 'KB', 'MB', 'GB', 'TB', 'EB', 'ZB', 'YB' );
-
-                $base = 1024;
-
-                $class = min((int)log($bytes , $base) , count($si_prefix) - 1);
-
-                echo sprintf('%1.2f' , $bytes / pow($base,$class));
-
-              ?></span>
-
-						<h4><?= $si_prefix[$class] ?> Disk Space</h4>
-
-					</div>
-
-					<div class="col-md-3 col-xs-6">
-
-						<i class="fa fa-pie-chart"></i>
-
-						<span class="counter"><?php
-
-                $bytes = disk_free_space("/"); 
+                $bytes = disk_total_space("/");
 
                 $si_prefix = array( 'B', 'KB', 'MB', 'GB', 'TB', 'EB', 'ZB', 'YB' );
 
@@ -97,14 +75,36 @@
 
               ?></span>
 
-						<h4><?= $si_prefix[$class] ?> Free Disk Space</h4>
+                                                <h4><?= $si_prefix[$class] ?> Disk Space</h4>
 
-					</div>
+                                        </div>
 
-				</div><!--/end row-->
+                                        <div class="col-md-3 col-xs-6">
+
+                                                <i class="fa fa-pie-chart"></i>
+
+                                                <span class="counter"><?php
+
+                $bytes = disk_free_space("/");
+
+                $si_prefix = array( 'B', 'KB', 'MB', 'GB', 'TB', 'EB', 'ZB', 'YB' );
+
+                $base = 1024;
+
+                $class = min((int)log($bytes , $base) , count($si_prefix) - 1);
+
+                echo sprintf('%1.2f' , $bytes / pow($base,$class));
+
+              ?></span>
+
+                                                <h4><?= $si_prefix[$class] ?> Free Disk Space</h4>
+
+                                        </div>
+
+                                </div><!--/end row-->
         <br />
         <?php
-	  if ($cloudauth == 1) {
+          if ($cloudauth == 1) {
             echo '<p align="center" class="thankyou">Thank you for supporting NEMS Linux. Read the <a href="https://www.patreon.com/nems/posts" target="_blank">Latest Posts on Patreon</a>.</p>';
           } else {
             echo '<p align="center"><a href="https://www.patreon.com/bePatron?u=8543379" class="btn btn-u btn-u-red" target="_blank"><img src="/img/fa-patreon.png" align="bottom" style="max-height:14px; margin-right: 8px;" class="pull-left img-responsive" /> Become a Patron</a></p>';
@@ -125,36 +125,50 @@
         ?>
 
 
-            <div class="row" style="display:none;">
-              <div style="margin-top: 40px;">
-
-                <div class="col-md-12 text-center img-center">
-                  <h3 style="font-size: 0.6em;">Product Of:<a href="https://Category5.TV/" target="_blank"><img src="/img/sponsors/cat5tv_network.webp" class="img-responsive" style="max-height: 30px;" /></a></h3>
-                </div>
-
+            <div class="row">
+              <div class="col-md-12 text-center" style="margin-top: 40px;">
+                <h3 style="font-size: 0.6em;">
+                  Sponsored By:
+                </h3>
               </div>
             </div>
 
-			</div><!--/end container-->
+            <div class="row">
+              <div class="container">
 
-		</div>
+                <div class="col-md-offset-2" style="display: flex; align-items: center; flex-wrap: wrap;">
+
+                  <div class="col-md-4">
+                    <a href="https://ameridroid.com/discount/1.6?ref=nemslinux" target="_blank"><img src="/img/sponsors/ameriDroid.webp" class="img-responsive" style="max-height: 60px;" /></a>
+                  </div>
+                  <div class="col-md-4">
+                    <a href="https://Category5.TV/" target="_blank"><img src="/img/sponsors/cat5tv_network.webp" class="img-responsive" style="max-height: 30px;" /></a>
+                  </div>
+
+                </div>
+
+              </div>
+
+                        </div><!--/end container-->
+
+                </div>
 
 
 
-	</section>
+        </section>
 
-					</div>
-				  </div>
-				</div>
-			</div>
+                                        </div>
+                                  </div>
+                                </div>
+                        </div>
 
-		  <!-- Promo Content END -->
-		</div>
-		<!-- Fullscreen Static Image END -->
+                  <!-- Promo Content END -->
+                </div>
+                <!-- Fullscreen Static Image END -->
 
-	  </div>
-	</section>
-	<!-- Promo block END -->
+          </div>
+        </section>
+        <!-- Promo block END -->
 
 
 <?php
@@ -391,9 +405,3 @@
         return $memory_usage;
 
     }
-
-
-
-?>
-
-
