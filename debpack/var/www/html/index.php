@@ -41,7 +41,7 @@
 
                                                 <i class="fa fa-bar-chart"></i>
 
-                                                <span class="counter"><?php $load = sys_getloadavg(); echo $load[1]; ?></span>
+                                                <span class="counter"><?php $load = sys_getloadavg(); echo round($load[1],2); ?></span>
 
                                                 <h4>5 Minute Load Average</h4>
 
