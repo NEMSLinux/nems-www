@@ -162,20 +162,20 @@ if (is_array($resource)) {
 $nemsconffile = '/usr/local/share/nems/nems.conf'; // www-admin must have access to read/write
 $conf = file($nemsconffile);
 if (is_array($conf)) { // Load the existing conf data
-	foreach ($conf as $line) {
-		$tmp = explode('=',$line);
-		if (is_array($tmp) && count($tmp) == 2) $nemsconf[trim($tmp[0])] = trim($tmp[1]);
-	}
+        foreach ($conf as $line) {
+                $tmp = explode('=',$line);
+                if (is_array($tmp) && count($tmp) == 2) $nemsconf[trim($tmp[0])] = trim($tmp[1]);
+        }
 }
 if (is_array($nemsconf) && isset($_POST) && count($_POST) > 0) { // Overwrite the existing conf data
-	// only need to include the conf options that are included in NEMS SST. The rest will be re-written from existing values.
+        // only need to include the conf options that are included in NEMS SST. The rest will be re-written from existing values.
         $nemsconf['perfdata_cutoff'] = intval($_POST['perfdata_cutoff']) ?: 0;
-	$nemsconf['tv_require_notify'] = sanitize($_POST['tv_require_notify']);
-	$nemsconf['tv_24h'] = sanitize($_POST['tv_24h']);
-	$nemsconf['osbpass'] = sanitize($_POST['osbpass']);
-	$nemsconf['osbkey'] = sanitize($_POST['osbkey']);
-	$nemsconf['webhook'] = sanitize($_POST['webhook']);
-	$nemsconf['alias'] = preg_replace("/&#?[a-z0-9]{2,8};/i","",sanitize($_POST['alias']));
+        $nemsconf['tv_require_notify'] = sanitize($_POST['tv_require_notify']);
+        $nemsconf['tv_24h'] = sanitize($_POST['tv_24h']);
+        $nemsconf['osbpass'] = sanitize($_POST['osbpass']);
+        $nemsconf['osbkey'] = sanitize($_POST['osbkey']);
+        $nemsconf['webhook'] = sanitize($_POST['webhook']);
+        $nemsconf['alias'] = preg_replace("/&#?[a-z0-9]{2,8};/i","",sanitize($_POST['alias']));
         $nemsconf['allowupdate'] = intval($_POST['allowupdate']) ?: 5;
         $nemsconf['background'] = intval($_POST['background']) ?: 5;
         if (isset($bgfileNEW) && strlen($bgfileNEW) > 0) {
@@ -204,10 +204,10 @@ if (is_array($nemsconf) && isset($_POST) && count($_POST) > 0) { // Overwrite th
 
         $nemsconf['php_agent_key'] = sanitize($_POST['php_agent_key']);
 
-	$nemsconfoutput = '';
-	foreach ($nemsconf as $key=>$value) {
-		$nemsconfoutput .= $key . '=' . $value . PHP_EOL;
-	}
+        $nemsconfoutput = '';
+        foreach ($nemsconf as $key=>$value) {
+                $nemsconfoutput .= $key . '=' . $value . PHP_EOL;
+        }
         file_put_contents($nemsconffile,$nemsconfoutput); // overwrite the existing config
 }
 if (!isset($nemsconf['alias']) || strlen($nemsconf['alias']) == 0) $nemsconf['alias'] = 'NEMS';
@@ -259,12 +259,12 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
 <form method="post" id="sst" class="sky-form" style="border:none;" enctype="multipart/form-data">
 
 
-					<div class="tab-v1">
-						<ul class="nav nav-tabs">
-							<li class="active"><a href="#general" data-toggle="tab">General</a></li>
+                                        <div class="tab-v1">
+                                                <ul class="nav nav-tabs">
+                                                        <li class="active"><a href="#general" data-toggle="tab">General</a></li>
               <li><a href="#migrator" data-toggle="tab">NEMS Migrator Backup</a></li>
               <li><a href="#cloud" data-toggle="tab">NEMS Cloud Services</a></li>
-		<li style="display:none;"><a href="#networking" data-toggle="tab">Networking</a></li>
+                <li style="display:none;"><a href="#networking" data-toggle="tab">Networking</a></li>
               <li><a href="#notifications" data-toggle="tab">Notifications</a></li>
 <?php if (ver('nems') >= 1.4) { ?>
               <li><a href="#tv" data-toggle="tab">TV Dashboard</a></li>
@@ -273,13 +273,13 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
               <li><a href="#hardware" data-toggle="tab">Hardware</a></li>
 <?php } ?>
               <li><a href="#options" data-toggle="tab">Optional Services</a></li>
-						</ul>
-						<div class="tab-content">
+                                                </ul>
+                                                <div class="tab-content">
 
-							<div class="tab-pane fade in active" id="general">
-								<div class="row">
-									<div class="col-md-12">
-										<div class="row">
+                                                        <div class="tab-pane fade in active" id="general">
+                                                                <div class="row">
+                                                                        <div class="col-md-12">
+                                                                                <div class="row">
 
 
 <div class="col-md-12" style="display:none;">
@@ -319,11 +319,11 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
             <label class="label">NEMS Update</label>
             <label class="select">
               <select name="allowupdate">
-		<option value="5"<?php if (!isset($nemsconf['allowupdate']) || $nemsconf['allowupdate'] == 5) echo ' SELECTED'; ?>>Install Updates As Released</option>
-		<option value="4"<?php if (isset($nemsconf['allowupdate']) && $nemsconf['allowupdate'] == 4) echo ' SELECTED'; ?>>Install Updates Every Week</option>
-		<option value="3"<?php if (isset($nemsconf['allowupdate']) && $nemsconf['allowupdate'] == 3) echo ' SELECTED'; ?>>Install Updates Every Two Weeks</option>
-		<option value="2"<?php if (isset($nemsconf['allowupdate']) && $nemsconf['allowupdate'] == 2) echo ' SELECTED'; ?>>Install Updates Once Per Month</option>
-		<option value="1"<?php if (isset($nemsconf['allowupdate']) && $nemsconf['allowupdate'] == 1) echo ' SELECTED'; ?>>Do Not Automatically Install Updates</option>
+                <option value="5"<?php if (!isset($nemsconf['allowupdate']) || $nemsconf['allowupdate'] == 5) echo ' SELECTED'; ?>>Install Updates As Released</option>
+                <option value="4"<?php if (isset($nemsconf['allowupdate']) && $nemsconf['allowupdate'] == 4) echo ' SELECTED'; ?>>Install Updates Every Week</option>
+                <option value="3"<?php if (isset($nemsconf['allowupdate']) && $nemsconf['allowupdate'] == 3) echo ' SELECTED'; ?>>Install Updates Every Two Weeks</option>
+                <option value="2"<?php if (isset($nemsconf['allowupdate']) && $nemsconf['allowupdate'] == 2) echo ' SELECTED'; ?>>Install Updates Once Per Month</option>
+                <option value="1"<?php if (isset($nemsconf['allowupdate']) && $nemsconf['allowupdate'] == 1) echo ' SELECTED'; ?>>Do Not Automatically Install Updates</option>
               </select>
               <i></i>
             </label>
@@ -334,11 +334,11 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
             <label class="label">Background Image</label>
             <label class="select">
               <select name="background" id="background">
-		<option value="6"<?php if (!isset($nemsconf['background']) || $nemsconf['background'] == 6) echo ' SELECTED'; ?>>Daily Image (Default)</option>
-		<option value="9"<?php if (isset($nemsconf['background']) && $nemsconf['background'] == 9) echo ' SELECTED'; ?>>Daily Color</option>
-		<option value="5"<?php if (isset($nemsconf['background']) && $nemsconf['background'] == 5) echo ' SELECTED'; ?>>NEMS Legacy</option>
-		<option value="7"<?php if (isset($nemsconf['background']) && $nemsconf['background'] == 7) echo ' SELECTED'; ?>>Custom Color</option>
-		<option value="8"<?php if (isset($nemsconf['background']) && $nemsconf['background'] == 8) echo ' SELECTED'; ?>>Upload Image</option>
+                <option value="6"<?php if (!isset($nemsconf['background']) || $nemsconf['background'] == 6) echo ' SELECTED'; ?>>Daily Image (Default)</option>
+                <option value="9"<?php if (isset($nemsconf['background']) && $nemsconf['background'] == 9) echo ' SELECTED'; ?>>Daily Color</option>
+                <option value="5"<?php if (isset($nemsconf['background']) && $nemsconf['background'] == 5) echo ' SELECTED'; ?>>NEMS Legacy</option>
+                <option value="7"<?php if (isset($nemsconf['background']) && $nemsconf['background'] == 7) echo ' SELECTED'; ?>>Custom Color</option>
+                <option value="8"<?php if (isset($nemsconf['background']) && $nemsconf['background'] == 8) echo ' SELECTED'; ?>>Upload Image</option>
               </select>
               <i></i>
             </label>
@@ -387,10 +387,10 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
             <label class="label">Blur Background</label>
             <label class="select">
               <select name="backgroundBlur">
-		<option value="1"<?php if (!isset($nemsconf['backgroundBlur']) || $nemsconf['backgroundBlur'] == 1) echo ' SELECTED'; ?>>Disabled</option>
-		<option value="2"<?php if (isset($nemsconf['backgroundBlur']) && $nemsconf['backgroundBlur'] == 2) echo ' SELECTED'; ?>>Enabled, Slight Blur</option>
-		<option value="3"<?php if (isset($nemsconf['backgroundBlur']) && $nemsconf['backgroundBlur'] == 3) echo ' SELECTED'; ?>>Enabled, Medium Blur</option>
-		<option value="4"<?php if (isset($nemsconf['backgroundBlur']) && $nemsconf['backgroundBlur'] == 4) echo ' SELECTED'; ?>>Enabled, Heavy Blur</option>
+                <option value="1"<?php if (!isset($nemsconf['backgroundBlur']) || $nemsconf['backgroundBlur'] == 1) echo ' SELECTED'; ?>>Disabled</option>
+                <option value="2"<?php if (isset($nemsconf['backgroundBlur']) && $nemsconf['backgroundBlur'] == 2) echo ' SELECTED'; ?>>Enabled, Slight Blur</option>
+                <option value="3"<?php if (isset($nemsconf['backgroundBlur']) && $nemsconf['backgroundBlur'] == 3) echo ' SELECTED'; ?>>Enabled, Medium Blur</option>
+                <option value="4"<?php if (isset($nemsconf['backgroundBlur']) && $nemsconf['backgroundBlur'] == 4) echo ' SELECTED'; ?>>Enabled, Heavy Blur</option>
               </select>
               <i></i>
             </label>
@@ -424,12 +424,12 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
             <label class="label">Performance Data Retention (ie., for NagiosGraphs)</label>
             <label class="select">
               <select name="perfdata_cutoff">
-		<option value="0"<?php if (!isset($nemsconf['perfdata_cutoff']) || $nemsconf['perfdata_cutoff'] == 0) echo ' SELECTED'; ?>>Keep Indefinitely</option>
-		<option value="365"<?php if (isset($nemsconf['perfdata_cutoff']) && $nemsconf['perfdata_cutoff'] == 365) echo ' SELECTED'; ?>>365 Days</option>
-		<option value="180"<?php if (isset($nemsconf['perfdata_cutoff']) && $nemsconf['perfdata_cutoff'] == 180) echo ' SELECTED'; ?>>180 Days</option>
-		<option value="90"<?php if (isset($nemsconf['perfdata_cutoff']) && $nemsconf['perfdata_cutoff'] == 90) echo ' SELECTED'; ?>>90 Days</option>
-		<option value="30"<?php if (isset($nemsconf['perfdata_cutoff']) && $nemsconf['perfdata_cutoff'] == 30) echo ' SELECTED'; ?>>30 Days</option>
-		<option value="7"<?php if (isset($nemsconf['perfdata_cutoff']) && $nemsconf['perfdata_cutoff'] == 7) echo ' SELECTED'; ?>>7 Days</option>
+                <option value="0"<?php if (!isset($nemsconf['perfdata_cutoff']) || $nemsconf['perfdata_cutoff'] == 0) echo ' SELECTED'; ?>>Keep Indefinitely</option>
+                <option value="365"<?php if (isset($nemsconf['perfdata_cutoff']) && $nemsconf['perfdata_cutoff'] == 365) echo ' SELECTED'; ?>>365 Days</option>
+                <option value="180"<?php if (isset($nemsconf['perfdata_cutoff']) && $nemsconf['perfdata_cutoff'] == 180) echo ' SELECTED'; ?>>180 Days</option>
+                <option value="90"<?php if (isset($nemsconf['perfdata_cutoff']) && $nemsconf['perfdata_cutoff'] == 90) echo ' SELECTED'; ?>>90 Days</option>
+                <option value="30"<?php if (isset($nemsconf['perfdata_cutoff']) && $nemsconf['perfdata_cutoff'] == 30) echo ' SELECTED'; ?>>30 Days</option>
+                <option value="7"<?php if (isset($nemsconf['perfdata_cutoff']) && $nemsconf['perfdata_cutoff'] == 7) echo ' SELECTED'; ?>>7 Days</option>
               </select>
               <i></i>
             </label>
@@ -546,10 +546,10 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
 
 
 
-							<div class="tab-pane fade in" id="migrator">
-								<div class="row">
-									<div class="col-md-12">
-										<div class="row">
+                                                        <div class="tab-pane fade in" id="migrator">
+                                                                <div class="row">
+                                                                        <div class="col-md-12">
+                                                                                <div class="row">
 
                       <div>
                          <header>NEMS Migrator<?php if ($cloudauth != 1) echo ' <a class="btn-u btn-u-xs" href="https://www.patreon.com/bePatron?c=1348071&rid=2163022" target="_blank">Sign Up for Off-Site</a>'; ?> <a class="btn-u btn-u-dark-green btn-u-xs" href="https://docs.nemslinux.com/en/latest/apps/nems-migrator.html" target="_blank">Documentation</a></header>
@@ -572,10 +572,10 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
 
 
 
-							<div class="tab-pane fade in" id="cloud">
-								<div class="row">
-									<div class="col-md-12">
-										<div class="row">
+                                                        <div class="tab-pane fade in" id="cloud">
+                                                                <div class="row">
+                                                                        <div class="col-md-12">
+                                                                                <div class="row">
 
                       <div>
                          <header>NEMS Cloud Services<?php if ($cloudauth != 1) echo ' <a class="btn-u btn-u-xs" href="https://www.patreon.com/bePatron?c=1348071&rid=2163022" target="_blank">Sign Up</a>'; ?> <a class="btn-u btn-u-dark-green btn-u-xs" href="https://docs.nemslinux.com/en/latest/nems-cloud-services/index.html" target="_blank">Learn More</a></header>
@@ -609,11 +609,12 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
                                                 <fieldset>
                                                   <section>
                                                     <p>Receive an email if your NEMS server goes offline or crashes.</p>
+                                                    <?php if ($cloudauth != 1) echo '<p><b>Note:</b> This feature requires an active NEMS Cloud Services account.</p>'; ?>
                                                     <label class="label">State</label>
                                                     <label class="select">
                                                       <select name="checkin.enabled">
                                                 <option value="0"<?php if (!isset($nemsconf['checkin.enabled']) || $nemsconf['checkin.enabled'] == 0) echo ' SELECTED'; ?>>Disabled</option>
-                                                <option value="1"<?php if (isset($nemsconf['checkin.enabled']) && $nemsconf['checkin.enabled'] == 1) echo ' SELECTED'; ?>>Enabled</option>
+                                                <option value="1"<?php if (isset($nemsconf['checkin.enabled']) && $nemsconf['checkin.enabled'] == 1) echo ' SELECTED'; ?>>Enabled <?php if ($cloudauth != 1) echo ' [Not Functional]'; ?></option>
                                                       </select>
                                                       <i></i>
                                                     </label>
@@ -648,17 +649,17 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
 
 
 
-							<div class="tab-pane fade in" id="networking">
-								<div class="row">
-									<div class="col-md-12">
-										<div class="row">
+                                                        <div class="tab-pane fade in" id="networking">
+                                                                <div class="row">
+                                                                        <div class="col-md-12">
+                                                                                <div class="row">
 <p>Coming Soon...</p>
 </div></div></div></div>
 
-							<div class="tab-pane fade in" id="notifications">
-								<div class="row">
-									<div class="col-md-12">
-										<div class="row">
+                                                        <div class="tab-pane fade in" id="notifications">
+                                                                <div class="row">
+                                                                        <div class="col-md-12">
+                                                                                <div class="row">
 
 <div>
 
@@ -845,10 +846,10 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
 <!-- tv dashboard -->
 <?php if (ver('nems') >= 1.4) { ?>
 
-							<div class="tab-pane fade in" id="tv">
-								<div class="row">
-									<div class="col-md-12">
-										<div class="row">
+                                                        <div class="tab-pane fade in" id="tv">
+                                                                <div class="row">
+                                                                        <div class="col-md-12">
+                                                                                <div class="row">
 
 <div>
 
@@ -859,8 +860,8 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
           <fieldset>
 
 <?php
-      		    if (checkConfEnabled('tvpw') == true) $checked = 'CHECKED="CHECKED"'; else $checked = '';
-            		    echo '<div class="row" style="margin-bottom: 20px;"><label class="toggle col-md-4"><input ' . $checked . ' name="tvpw" type="checkbox" class="services"><i></i>Allow TV Dashboard Without Password</label></div>';
+                    if (checkConfEnabled('tvpw') == true) $checked = 'CHECKED="CHECKED"'; else $checked = '';
+                            echo '<div class="row" style="margin-bottom: 20px;"><label class="toggle col-md-4"><input ' . $checked . ' name="tvpw" type="checkbox" class="services"><i></i>Allow TV Dashboard Without Password</label></div>';
 ?>
 
                 <section>
@@ -901,10 +902,10 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
 <!-- Hardware -->
 <?php if (ver('nems') >= 1.6 || isset($_GET['beta'])) { ?>
 
-							<div class="tab-pane fade in" id="hardware">
-								<div class="row">
-									<div class="col-md-12">
-										<div class="row">
+                                                        <div class="tab-pane fade in" id="hardware">
+                                                                <div class="row">
+                                                                        <div class="col-md-12">
+                                                                                <div class="row">
 
 <div>
 
@@ -1027,57 +1028,57 @@ $(function() {
 
 <!-- / Hardware -->
 
-							<div class="tab-pane fade in" id="options">
-								<div class="row">
-									<div class="col-md-12">
-										<div class="row">
+                                                        <div class="tab-pane fade in" id="options">
+                                                                <div class="row">
+                                                                        <div class="col-md-12">
+                                                                                <div class="row">
 
                           <header>Optional Services</header>
                           <fieldset>
                               <section class="col-md-6">
-                      		<?php
+                                <?php
 
-                      		  // Only for Raspberry Pi
-                      		  if ($platform->num < 10) {
-                      			if (checkConfEnabled('rpi-monitor') == true) $checked = 'CHECKED="CHECKED"'; else $checked = '';
-                      			echo '<label class="toggle text-right"><input ' . $checked . ' name="rpi-monitor" type="checkbox" class="services reboot"><i></i>RPi-Monitor</label>';
-                      		  }
-
-                      		  if (checkConfEnabled('nagios-api') == true) $checked = 'CHECKED="CHECKED"'; else $checked = '';
-                      		  echo '<label class="toggle text-right"><input ' . $checked . ' name="nagios-api" type="checkbox" class="services reboot"><i></i>Nagios API</label>';
-
-                                  if (ver('nems') <= 1.4) {
-                      		    if (checkConfEnabled('webmin') == true) $checked = 'CHECKED="CHECKED"'; else $checked = '';
-                      		    echo '<label class="toggle text-right"><input ' . $checked . ' name="webmin" type="checkbox" class="services reboot"><i></i>Webmin</label>';
+                                  // Only for Raspberry Pi
+                                  if ($platform->num < 10) {
+                                        if (checkConfEnabled('rpi-monitor') == true) $checked = 'CHECKED="CHECKED"'; else $checked = '';
+                                        echo '<label class="toggle text-right"><input ' . $checked . ' name="rpi-monitor" type="checkbox" class="services reboot"><i></i>RPi-Monitor</label>';
                                   }
 
-                      		  if (checkConfEnabled('monitorix') == true) $checked = 'CHECKED="CHECKED"'; else $checked = '';
-                      		  echo '<label class="toggle text-right"><input ' . $checked . ' name="monitorix" type="checkbox" class="services reboot"><i></i>Monitorix</label>';
+                                  if (checkConfEnabled('nagios-api') == true) $checked = 'CHECKED="CHECKED"'; else $checked = '';
+                                  echo '<label class="toggle text-right"><input ' . $checked . ' name="nagios-api" type="checkbox" class="services reboot"><i></i>Nagios API</label>';
 
-                      		  if (checkConfEnabled('ibmi') == true) $checked = 'CHECKED="CHECKED"'; else $checked = '';
-                      		  echo '<label class="toggle text-right"><input ' . $checked . ' name="ibmi" type="checkbox" class="services reboot"><i></i>IBM i Monitoring Daemon</label>';
+                                  if (ver('nems') <= 1.4) {
+                                    if (checkConfEnabled('webmin') == true) $checked = 'CHECKED="CHECKED"'; else $checked = '';
+                                    echo '<label class="toggle text-right"><input ' . $checked . ' name="webmin" type="checkbox" class="services reboot"><i></i>Webmin</label>';
+                                  }
 
-                      		?>
-                      		<script>
-                      		window.onload = function() {
-                      		  $(".services.reboot").on('click', function(){
-                      		      var thename = $(this).attr('name');
-                      		      if ( $(this).is( ":checked" ) ) var onoff = 'on'; else var onoff = 'off';
-                      		      $.ajax({
-                      			  url: 'services.php',
-                      			  type: 'post',
-                      			  data: {
-                      			    name: thename,
-                      			    value: onoff
-                      			  },
-                      			  success: function(response) {
-                      			     console.log(thename+' set to '+onoff);
-                      			  }
-                      		      });
-                      		    alert('You have turned ' + onoff + ' ' + thename + '. Please reboot your NEMS server for the change to take effect.');
-                      		  });
-                      		}
-                      		</script>
+                                  if (checkConfEnabled('monitorix') == true) $checked = 'CHECKED="CHECKED"'; else $checked = '';
+                                  echo '<label class="toggle text-right"><input ' . $checked . ' name="monitorix" type="checkbox" class="services reboot"><i></i>Monitorix</label>';
+
+                                  if (checkConfEnabled('ibmi') == true) $checked = 'CHECKED="CHECKED"'; else $checked = '';
+                                  echo '<label class="toggle text-right"><input ' . $checked . ' name="ibmi" type="checkbox" class="services reboot"><i></i>IBM i Monitoring Daemon</label>';
+
+                                ?>
+                                <script>
+                                window.onload = function() {
+                                  $(".services.reboot").on('click', function(){
+                                      var thename = $(this).attr('name');
+                                      if ( $(this).is( ":checked" ) ) var onoff = 'on'; else var onoff = 'off';
+                                      $.ajax({
+                                          url: 'services.php',
+                                          type: 'post',
+                                          data: {
+                                            name: thename,
+                                            value: onoff
+                                          },
+                                          success: function(response) {
+                                             console.log(thename+' set to '+onoff);
+                                          }
+                                      });
+                                    alert('You have turned ' + onoff + ' ' + thename + '. Please reboot your NEMS server for the change to take effect.');
+                                  });
+                                }
+                                </script>
                               </section>
                           </fieldset>
 
