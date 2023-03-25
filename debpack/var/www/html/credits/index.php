@@ -210,6 +210,7 @@ window.findKeyframesRule = function (rule) {
             <h2 style="margin-top: 50px;">Platform Support</h2>
             <h3>Big thanks to the following for their contributions to open source, which<br /> helped me greatly in my quest to port NEMS Linux to many platforms.</h3>
 
+            <h1>Indiedroid Nova</h1><h2>Steve Hay</h2>
             <h1>Raspberry Pi</h1><h2>Raspberry Pi Foundation</h2>
             <h1>PINE64</h1><h2>Ayufan</h2>
             <h1>ODROID</h1><h2>Meveric, mad_ady</h2>
