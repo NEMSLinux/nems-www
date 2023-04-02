@@ -199,10 +199,15 @@ window.findKeyframesRule = function (rule) {
 <?php
   $list = file('credits.txt');
   sort($list);
+  $dedupe = array();
 
   foreach ($list as $name) {
     if (trim(strlen($name)) > 0) {
-      echo '<h4>' . trim($name) . '</h4>' . PHP_EOL;
+      $thisname = trim($name);
+      if (!in_array($thisname,$dedupe)) {
+        $dedupe[] = $thisname;
+        echo '<h4>' . $thisname . '</h4>' . PHP_EOL;
+      }
     }
   }
 ?>
