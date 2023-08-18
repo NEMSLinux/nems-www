@@ -36,7 +36,12 @@
   }
 
   // default image within nems-www
-  $defaultimg = '/img/wallpaper/server_room_dark.jpg';
+  if ($whitelabel->enabled == 1) {
+    $defaultimg = '/img/whitelabel.php?f=background';
+    $background = 5; // load this by default, overriding user settings
+  } else {
+    $defaultimg = '/img/wallpaper/server_room_dark.jpg';
+  }
 
   // default background color
   $defaultbgcolor = '040111';

@@ -7,7 +7,8 @@
 <head>
   <?php
     $nemsalias = trim(shell_exec('/usr/local/bin/nems-info alias'));
-    echo '  <title>NEMS';
+    echo '  <title>';
+    echo $whitelabel->name;
     if (isset($nemsalias) && strtoupper($nemsalias) != 'NEMS') {
       echo ': ' . $nemsalias;
     } else {
@@ -22,7 +23,13 @@
         <meta name="robots" content="noindex">
 
 	<!-- Favicon -->
-        <link rel="shortcut icon" href="/favicon.ico">
+	<?php
+		if ($whitelabel->enabled == 1) {
+		        echo '<link rel="shortcut icon" href="/img/whitelabel.php?f=favicon">';
+		} else {
+		        echo '<link rel="shortcut icon" href="/favicon.ico">';
+		}
+	?>
 
         <!-- Nav bar color -->
         <meta name="theme-color" content="#<?= $bgcolorDark ?>">
@@ -91,8 +98,13 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
 				</button>
 
 				<a class="navbar-brand" href="/">
-					<!--<span>N</span>EMS Linux-->
-                                        <img src="/img/nems_logo.png" id="logo-header" alt="NEMS Linux" />
+					<?php
+						if ($whitelabel->enabled == 1) {
+							echo '<img src="/img/whitelabel.php?f=logo" id="logo-header" alt="' . $whitelabel->name . '" />';
+						} else {
+		                                        echo '<img src="/img/nems_logo.png" id="logo-header" alt="NEMS Linux" />';
+						}
+					?>
 				</a>
 			</div>
 
@@ -106,9 +118,9 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
 							  Configuration
 							</a>
 							<ul class="dropdown-menu">
-							  <?php if (ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . '/info/">NEMS Server Overview</a></li>'; ?>
-							  <?php if (ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . '/config/">NEMS System Settings Tool</a></li>'; ?>
-							  <li><a href="/nconf/" target="_blank">NEMS Configurator (NConf)</a></li>
+							  <?php if (ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . '/info/">Server Overview</a></li>'; ?>
+							  <?php if (ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . '/config/">System Settings Tool</a></li>'; ?>
+							  <li><a href="/nconf/" target="_blank">Configurator</a></li>
 							</ul>
 						</li>
 
@@ -120,9 +132,9 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
 
                                                           <li><h4 style="padding: 0 0 4px 4px; margin-bottom: 0;">Modern</h4></li>
 							  <?php if (ver('nems') >= 1.4) echo '<li><a href="/adagios/" target="_blank">Adagios</a></li>'; ?>
-							  <?php if (ver('nems') >= 1.4) echo '<li><a href="/mobile/" target="_blank">NEMS Mobile UI</a></li>'; ?>
-							  <?php if (ver('nems') >= 1.4) echo '<li><a href="/tv/" target="_blank">NEMS TV Dashboard</a></li>'; ?>
-							  <?php if (ver('nems') >= 1.6 || file_exists('/var/www/nagiostv')) echo '<li><a href="/nagiostv/" target="_blank">NEMS Tactical Overview</a></li>'; ?>
+							  <?php if (ver('nems') >= 1.4) echo '<li><a href="/mobile/" target="_blank">Mobile UI</a></li>'; ?>
+							  <?php if (ver('nems') >= 1.4) echo '<li><a href="/tv/" target="_blank">TV Dashboard</a></li>'; ?>
+							  <?php if (ver('nems') >= 1.6 || file_exists('/var/www/nagiostv')) echo '<li><a href="/nagiostv/" target="_blank">Tactical Overview</a></li>'; ?>
 							  <?php
   $cloudauth = intval(shell_exec('/usr/local/bin/nems-info cloudauthcache'));
   if ($cloudauth == 1) echo '<li><a href="/cloud/" target="_blank">NEMS Cloud Services Dashboard</a></li>';
@@ -160,7 +172,7 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
 							<a href="/backup/nems-migrator/">Migrator</a>
 						</li>
 
-						<li class="dropdown">
+						<li class="dropdown" <?php if ($whitelabel->enabled == 1) echo 'style="display:none;"'; ?>>
 							<a href="javascript:void(0);" class="dropdown-toggle" data-toggle="dropdown">
 								Support Us
 							</a>
@@ -172,7 +184,7 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
             						</ul>
 						</li>
 
-						<li class="dropdown">
+						<li class="dropdown" <?php if ($whitelabel->enabled == 1) echo 'style="display:none;"'; ?>>
 							<a href="javascript:void(0);" class="dropdown-toggle" data-toggle="dropdown">
 								Get Help
 							</a>

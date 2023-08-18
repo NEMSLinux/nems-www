@@ -3,6 +3,17 @@
 
   $alias = trim(shell_exec('/usr/local/bin/nems-info alias'));
 
+  // Whitelabel
+  $whitelabel = new stdClass();
+  $whitelabel->logo = '/usr/local/share/whitelabel/logo.jpg';
+  if (file_exists($whitelabel->logo)) {
+    $whitelabel->enabled = 1;
+    $whitelabel->name = file_get_contents('/usr/local/share/whitelabel/name.txt');
+  } else {
+    $whitelabel->enabled = 0;
+    $whitelabel->name = 'NEMS';
+  }
+
   function ver($product='nems') {
     $platform = new stdClass();
     $arrContextOptions=array(

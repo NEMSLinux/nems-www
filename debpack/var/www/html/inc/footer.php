@@ -41,7 +41,7 @@
 
 	</section>
 */ ?>
-	<div class="footsie">
+	<div class="footsie" <?php if ($whitelabel->enabled == 1) echo ' style="display:none;"'; ?>>
 	  <div class="container">
 		<div class="row">
 		  <div class="col-md-4 col-sm-4 col-xs-5">

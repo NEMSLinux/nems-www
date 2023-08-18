@@ -25,7 +25,13 @@
 
 
                 <div class="parallax-counter-v4 parallaxBg1" id="facts">
-                                                <span style="padding:10px 20px;"><span class="color-green">N</span>EMS Linux</span><br />
+						<?php
+							if ($whitelabel->enabled == 1) {
+	                                                	echo '<span style="padding:10px 20px;"><span class="color-green">' . $whitelabel->name . '</span> Server</span><br />';
+							} else {
+	                                                	echo '<span style="padding:10px 20px;"><span class="color-green">N</span>EMS Linux</span><br />';
+							}
+						?>
                                                 <span style="color: #aaa;font-size:0.6em;">For <?php $platform = ver('platform'); echo $platform->name; ?></span><br />
                                                 <?php if (strtoupper($alias) != 'NEMS') echo '<span style="color: orange;font-size:0.8em;">' . $alias . '</span>'; ?>
                                                 <?php if (ver('nems-available') > ver('nems')) echo '<div class="alert alert-warning fade in"><strong>Note:</strong> NEMS ' . ver('nems-available') . ' is available.<br /><a class="btn btn-u rounded" href="https://docs.nemslinux.com/en/latest/changelogs/' . ver('nems-branch-avail') . '.html" target="_blank">Changelog</a></div>'; ?>
@@ -104,6 +110,8 @@
                                 </div><!--/end row-->
         <br />
         <?php
+         if ($whitelabel->enabled == 0) {
+
           if ($cloudauth == 1) {
             echo '<p align="center" class="thankyou">Thank you for supporting NEMS Linux. Read the <a href="https://www.patreon.com/nems/posts" target="_blank">Latest Posts on Patreon</a>.</p>';
           } else {
@@ -149,6 +157,9 @@
 
               </div>
 
+            <?php
+              } // End Whitelabel removal of sponsors
+            ?>
                         </div><!--/end container-->
 
                 </div>
