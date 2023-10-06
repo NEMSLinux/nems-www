@@ -144,15 +144,27 @@
             <div class="row">
               <div class="container">
 
-                <div class="col-md-offset-2" style="display: flex; align-items: center; flex-wrap: wrap;">
+                <div class="row">
+                  <div class="col-md-offset-2" style="display: flex; align-items: center; flex-wrap: wrap;">
 
-                  <div class="col-md-4">
-                    <a href="https://ameridroid.com/discount/1.6?ref=nemslinux" target="_blank"><img src="/img/sponsors/ameriDroid.webp" class="img-responsive" style="max-height: 60px;" /></a>
-                  </div>
-                  <div class="col-md-4">
-                    <a href="https://Category5.TV/" target="_blank"><img src="/img/sponsors/cat5tv_network.webp" class="img-responsive" style="max-height: 30px;" /></a>
-                  </div>
+                    <div class="col-md-4">
+                      <a href="https://ameridroid.com/discount/1.6?ref=nemslinux" target="_blank"><img src="/img/sponsors/ameriDroid.webp" class="img-responsive" style="max-height: 60px;" /></a>
+                    </div>
+                    <div class="col-md-4">
+                      <a href="https://www.voyagersystems.cloud/" target="_blank"><img src="/img/sponsors/Voyager_Systems.webp" class="img-responsive" style="max-height: 60px;" /></a>
+                    </div>
 
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-offset-4" style="display: flex; align-items: center; flex-wrap: wrap;">
+
+                    <div class="col-md-4">
+                      <a href="https://Category5.TV/" target="_blank"><img src="/img/sponsors/cat5tv_network.webp" class="img-responsive" style="max-height: 30px;" /></a>
+                    </div>
+
+                  </div>
                 </div>
 
               </div>
