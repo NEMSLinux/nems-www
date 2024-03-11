@@ -1,0 +1,4 @@
+AuthType Basic
+AuthName "NEMS Mobile UI"
+AuthUserFile /var/www/htpasswd
+Require valid-user
