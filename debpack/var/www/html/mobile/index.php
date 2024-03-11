@@ -1,11 +1,4 @@
 <?php  
-
-  # Will only work on NEMS 1.4+, so do not allow it to run on anything older
-  $nemsver = shell_exec('/usr/local/bin/nems-info nemsver');
-  if (floatval($nemsver) < 1.4) {
-    exit('Requires NEMS Linux 1.4+');
-  }
-
 // index.php 
 // main page routing and controller
 // @author Mike Guthrie

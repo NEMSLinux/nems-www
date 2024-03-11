@@ -4,7 +4,8 @@
 // @author Mike Guthrie
 
 
-// Nagios Mobile 1.0
+// Nagios Mobile 1.0.3
+// PHP 8 fix by Robbie Ferguson // NEMS Linux
 // Copyright (c) 2011 Nagios Enterprises, LLC
 // Web: http://www.nagios.com/products/nagiosmobile
 // Developed by Mike Guthrie and Wesley Zhao.  
@@ -81,7 +82,7 @@
 function parse_cgi_file($permsfile) //returns array of authorization => users[array] 
 {
 	$cgi = fopen($permsfile, "r") or exit("Unable to open '$permsfile' file!");
-	
+
 	if(!$cgi) die('cgi.cfg not found');
 
 	$keywords = array('host_commands', 'hosts', 'service_commands', 'services',
@@ -94,11 +95,15 @@ function parse_cgi_file($permsfile) //returns array of authorization => users[ar
 
 		if (!preg_match('/^\s*#/', $line) && preg_match($keyword_regex, $line, $keyword_matches)) {
 			$perm = $keyword_matches[1];
-			
+
 			list($actual_perm, $userlist) = explode('=', trim($line), 2);
-			
+
 			$permusers = explode(',', $userlist);
-			array_walk($permusers, create_function('&$v', 'trim($v);'));
+
+                        array_walk($permusers, function (&$v) {
+                          $v = trim($v);
+                        });
+
 			$perms[$actual_perm] = $permusers; //XXX move all to NagiosUser in future versions
 		}
 

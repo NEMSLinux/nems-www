@@ -196,7 +196,9 @@ class LiveStatusQuery
         $query = [];
 
         $query[] = "GET {$this->topic}";
-        $this->columns && $query[] = "Columns: " . join($this->columns, ' ');
+        if ($this->columns) {
+            $query[] = "Columns: " . implode(' ', $this->columns);
+        }
 
         foreach ($this->filters as $filter) {
             $query[] = "Filter: $filter";
@@ -212,7 +214,7 @@ class LiveStatusQuery
 
         $query[] = "\n";
 
-        return join($query, "\n");
+        return implode("\n", $query);
 
     }
 }

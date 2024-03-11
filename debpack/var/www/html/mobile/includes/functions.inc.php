@@ -6,7 +6,8 @@
 // @author Wesley Zhao
 
 
-// Nagios Mobile 1.0
+// Nagios Mobile 1.0.3
+// PHP 8 compatibility by Robbie Ferguson for NEMS Linux
 // Copyright (c) 2011 Nagios Enterprises, LLC
 // Web: http://www.nagios.com/products/nagiosmobile
 // Developed by Mike Guthrie and Wesley Zhao.  
@@ -184,12 +185,11 @@ function calc_global_stats($status)
 		"service_acknowledged"=> 0,
         );
 
-    while (list($host,$host_status) = each($status["hosts"])) 
-    {
+        foreach ($status["hosts"] as $host => $host_status) {
 		//handle fix for users who are auth to see services but not the host 
 		if(isset($host_status['current_state']) ) 
 		{
-		
+
 			switch ($host_status["current_state"]) 
 			{
 				case HOST_UP:
@@ -206,17 +206,16 @@ function calc_global_stats($status)
 			if($host_status["current_state"]>0 && $host_status["scheduled_downtime_depth"]==0 
 			   && $host_status["problem_has_been_acknowledged"]==0) 
 				$global_stats["host_unhandled"]++;
-				
+
 			$global_stats["host_problems"] = $global_stats["host_down"]+$global_stats["host_unreachable"];
-			
+
 			if($host_status["current_state"] > 0 && ($host_status["scheduled_downtime_depth"] > 1 || $host_status["problem_has_been_acknowledged"]>0))
 				$global_stats["host_acknowledged"]++;
 		}
-		
+
 		//handle services under host 
         if (isset($host_status["services"])) {
-            while (list($service_desc,$service_status) = each($host_status["services"])) 
-			{
+            foreach ($host_status["services"] as $service_desc => $service_status) {
                 switch ($service_status["current_state"]) 
 				{
 					case STATE_OK:

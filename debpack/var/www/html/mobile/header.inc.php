@@ -81,20 +81,19 @@ $WEBKIT = (strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'webkit')) ? true : f
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta name="viewport" content="height=device-height,width=device-width" />
-<title>NEMS Mobile UI</title>
+<title>Nagios Mobile</title>
 <link rel="apple-touch-icon" href="nagios.png" />
-
-<script src="js/jquery-1.5.2.min.js"></script>
-
-<link rel="stylesheet" href="jquery.mobile-1.0/jquery.mobile-1.0.min.css" />
 <link rel="stylesheet" href="nagiosmobile.css" />
-
+<script type='text/javascript' src="js/jquery-1.5.2.min.js"></script>
+<link rel="stylesheet" href="jquery.mobile-1.0/jquery.mobile-1.0.min.css" />
 <script type='text/javascript' src="jquery.mobile-1.0/jquery.mobile-1.0.min.js"></script>
 <script type='text/javascript' src="js/nagiosmobile.js"></script>
 <style>
+
 <?php 
 //if webkit exists in browser, use nice gradients, otherwise use flat colors 
 echo '/*WEBKIT: '.$WEBKIT.'*/'; 
+
 if($WEBKIT) {
 	echo '
 	.critical, .down, .hostproblem, .unknown, .unreachable { background: -webkit-gradient(linear, 0% 20%, 0% 100%, from(transparent), to(#f00)) !important;}
@@ -109,7 +108,10 @@ else
 	dd.critical {color: #FFF !important;text-shadow: 1px 1px 1px #000 !important;}
 	dd.warning {color: #000; text-shadow: 1px 1px 1px #000 !important;}
 	'; 
+
 ?>
+
+
 </style>
 <script>
 	var BASEURL = '<?php echo $BASE_URL; ?>';  

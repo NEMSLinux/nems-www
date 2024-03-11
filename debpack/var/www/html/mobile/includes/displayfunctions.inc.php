@@ -820,14 +820,12 @@ function show_about_page() {
 	  </div>
 
 	  <div data-role="content">
-		<h2>NEMS Mobile UI for NEMS Linux 1.4+</h2>
-		<p>Based on Nagios Mobile v1.03</p>
-		<p>This version is a proof of concept only. I plan to completely rewrite it without being based on the <u>old</u> Nagios Mobile. jQuery 1.5? <em>EW!</em></p>
+		<h2>Nagios Mobile v<?php echo TN_VERSION; ?></h2>
 		<p>Copyright (c) 2011 <a rel="external" href="http://www.nagios.com" title="Nagios Enterprises" target="_blank">Nagios Enterprises, LLC</a></p>
 		<!-- <p>Web:<a href="http://www.nagios.com/products/nagiosmobile"> http://www.nagios.com/products /nagiosmobile</a></p>	-->	
 		<p>Based on <a rel="external" href="http://exchange.nagios.org/directory/Addons/Frontends-%28GUIs-and-CLIs%29/Mobile-Device-Interfaces/Teeny-Nagios/details" target="_blank" title="Teeny Nagios">Teeny Nagios</a> by Hirose Masaaki.</p>
 		<p>Copyright (c) 2011 Apache 2.0 License</p>
-		<p>Originally developed by Mike Guthrie and Wesley Zhao.<br />Adapted for NEMS Linux by Robbie Ferguson.</p>
+		<p>Developed by Mike Guthrie and Wesley Zhao.</p>
 	  </div>
 	</div>
 	
