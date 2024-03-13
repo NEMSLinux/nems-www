@@ -29,7 +29,7 @@
 							if ($whitelabel->enabled == 1) {
 	                                                	echo '<span style="padding:10px 20px;"><span class="color-green">' . $whitelabel->name . '</span> Server</span><br />';
 							} else {
-	                                                	echo '<span style="padding:10px 20px;"><span class="color-green">N</span>EMS Linux</span><br />';
+                                                                echo '<span style="padding:10px 20px;"><span class="color-green">N</span>EMS Linux <sup style="font-size:0.4em; color:#999;">' . ver('nems') . '</sup></span><br />';
 							}
 						?>
                                                 <span style="color: #aaa;font-size:0.6em;">For <?php $platform = ver('platform'); echo $platform->name; ?></span><br />

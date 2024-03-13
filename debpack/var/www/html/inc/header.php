@@ -162,6 +162,7 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
 							<ul class="dropdown-menu">
  							  <?php if (checkConfEnabled('monitorix')) { echo '<li><a href="/monitorix/">Monitorix</a></li>'; } ?>
 							  <?php if (ver('nems') >= 1.4 && ver('platform')->num != 21) echo '<li><a href="https://' . $self->host . ':9090" target="_blank">Cockpit</a></li>'; ?>
+							  <?php if (ver('nems') >= 1.7) echo '<li><a href="/power">Power Controller</a></li>'; ?>
 							  <?php if ((ver('platform')->num < 10) && checkConfEnabled('rpi-monitor')) { echo '<li><a href="http://' . $self->host . ':8888" target="_blank">RPi-Monitor</a></li>'; } ?>
 							  <?php if (ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . ':2812" target="_blank"><em>monit</em> Service Monitor</a></li>'; ?>
 							  <?php if (file_exists('/usr/lib/systemd/system/glancesweb.service')) echo '<li><a href="http://' . $self->host . ':61208" target="_blank">Glances</a></li>'; ?>
