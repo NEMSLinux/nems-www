@@ -23,7 +23,7 @@
     <section>
       <label class="label" style="color: #eee">Confirm this action</label>
       <div class="inline-group">
-        <label class="checkbox light" style="color: #999"><input type="checkbox" id="confirmed"><i></i>Confirmed</label>
+        <label class="checkbox light" style="color: #999"><input name="confirm" type="checkbox" id="confirmed"><i></i>Confirmed</label>
       </div>
     </section>
 
@@ -42,10 +42,11 @@
                              $('#power-reboot-modal .modal-body').html('Please Wait <i class=\"fa fa-spinner fa-pulse fa-fw\"></i>');
                              $('#power-reboot-modal').modal('show');
                              $.ajax({
-                               url: '/commands/reboot.php',
+                               url: './commands/reboot.php',
                                type: 'post',
                                data: {
-                                 'SST':1
+                                 'SST':1,
+                                 'confirm':$('input#confirmed').prop('checked')
                                },
                                success: function(response){
                                  $('#power-reboot-modal .modal-body').html(response);
@@ -69,10 +70,11 @@
                              $('#power-halt-modal .modal-body').html('Please Wait <i class=\"fa fa-spinner fa-pulse fa-fw\"></i>');
                              $('#power-halt-modal').modal('show');
                              $.ajax({
-                               url: '/commands/halt.php',
+                               url: './commands/halt.php',
                                type: 'post',
                                data: {
-                                 'SST':1
+                                 'SST':1,
+                                 'confirm':$('input#confirmed').prop('checked')
                                },
                                success: function(response){
                                  $('#power-halt-modal .modal-body').html(response);
