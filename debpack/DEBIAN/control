@@ -4,7 +4,7 @@ Priority: required
 Section: main
 Maintainer: NEMS Linux <nems@category5.tv>
 Architecture: all
-Version: 1.6.466
+Version: 1.6.467
 Provides: nems-www
 Description: NEMS Dashboard Web Interface
 Depends: apache2, php (>= 7.3), ssl-cert, libapache2-mod-security2, php-cli (>= 7.3), php-common, php-curl, php-gd, php-json, php-mbstring, php-mysql, php-opcache, php-phpdbg, php-readline, php-sqlite3, php-xml, libapache2-mod-php, libargon2-1, libsodium23, php-curl, php-rrd, php-sybase
