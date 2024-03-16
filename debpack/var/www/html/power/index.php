@@ -39,7 +39,7 @@
                                popup('Not rebooting: You did not confirm.');
                                return false;
                              }
-                             $('#power-reboot-modal .modal-body').html('Please Wait <i class=\"fa fa-spinner fa-pulse fa-fw\"></i>');
+                             $('#power-reboot-modal .modal-body').html('Waiting for NEMS background tasks to finish. Please Wait <i class=\"fa fa-spinner fa-pulse fa-fw\"></i>');
                              $('#power-reboot-modal').modal('show');
                              $.ajax({
                                url: './commands/reboot.php',
