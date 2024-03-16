@@ -3,8 +3,9 @@ function waitForNEMS() {
   $updating = intval(trim(shell_exec('/usr/local/bin/nems-info quickfix')));
   if ($updating == 1) {
     $iteration = 0;
-    echo 'Waiting for NEMS Linux to finish updating. Please wait...<br />';
-    flush();
+//    echo 'Waiting for NEMS Linux to finish updating. Please wait...<br />';
+    echo 'Waiting for NEMS background tasks to finish. Please Wait.<br />'; // should match ../index.php ajax message as this replaces it on complete
+//    flush();
     while ($updating == 1) {
       sleep(5);
 /*
@@ -17,7 +18,7 @@ function waitForNEMS() {
 */
       $updating = intval(trim(shell_exec('/usr/local/bin/nems-info quickfix')));
     }
-    echo 'NEMS Linux reports ready to proceed.<br />';
+    echo 'NEMS Linux is ready to proceed.<br />';
     flush();
   }
 }

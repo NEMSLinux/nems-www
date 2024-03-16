@@ -39,7 +39,7 @@
                                popup('Not rebooting: You did not confirm.');
                                return false;
                              }
-                             $('#power-reboot-modal .modal-body').html('Waiting for NEMS background tasks to finish. Please Wait <i class=\"fa fa-spinner fa-pulse fa-fw\"></i>');
+                             $('#power-reboot-modal .modal-body').html('Waiting for NEMS background tasks to finish. Please Wait <i class=\"fa fa-spinner fa-pulse fa-fw\"></i><br /><br /><b>Note:</b> Even if you close this window, the reboot will occur in a moment.');
                              $('#power-reboot-modal').modal('show');
                              $.ajax({
                                url: './commands/reboot.php',
@@ -67,7 +67,7 @@
                                popup('Not shutting down: You did not confirm.');
                                return false;
                              }
-                             $('#power-halt-modal .modal-body').html('Please Wait <i class=\"fa fa-spinner fa-pulse fa-fw\"></i>');
+                             $('#power-halt-modal .modal-body').html('Waiting for NEMS background tasks to finish. Please Wait <i class=\"fa fa-spinner fa-pulse fa-fw\"></i><br /><br /><b>Note:</b> Even if you close this window, the shutdown will occur in a moment.');
                              $('#power-halt-modal').modal('show');
                              $.ajax({
                                url: './commands/halt.php',
