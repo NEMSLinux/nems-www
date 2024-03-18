@@ -1039,7 +1039,7 @@ $(function() {
                                 <?php
 
                                   // Only for Raspberry Pi
-                                  if ($platform->num < 10) {
+                                  if ($platform->num < 10 || ($platform->num >= 150 && $platform->num <= 199)) {
                                         if (checkConfEnabled('rpi-monitor') == true) $checked = 'CHECKED="CHECKED"'; else $checked = '';
                                         echo '<label class="toggle text-right"><input ' . $checked . ' name="rpi-monitor" type="checkbox" class="services reboot"><i></i>RPi-Monitor</label>';
                                   }
