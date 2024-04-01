@@ -34,7 +34,7 @@
 						?>
                                                 <span style="color: #aaa;font-size:0.6em;">For <?php $platform = ver('platform'); echo $platform->name; ?></span><br />
                                                 <?php if (strtoupper($alias) != 'NEMS') echo '<span style="color: orange;font-size:0.8em;">' . $alias . '</span>'; ?>
-                                                <?php if (ver('nems-available') > ver('nems')) echo '<div class="alert alert-warning fade in"><strong>Note:</strong> NEMS ' . ver('nems-available') . ' is available.<br /><a class="btn btn-u rounded" href="https://docs.nemslinux.com/en/latest/changelogs/' . ver('nems-branch-avail') . '.html" target="_blank">Changelog</a></div>'; ?>
+                                                <?php if (ver('nems-available') > ver('nems')) echo '<div class="alert alert-warning fade in"><strong>Note:</strong> NEMS Linux ' . ver('nems-available') . ' is available.<br /><a class="btn btn-u rounded" href="https://docs.nemslinux.com/en/latest/changelogs/' . ver('nems-branch-avail') . '.html" target="_blank">Changelog</a><a class="btn btn-u rounded btn-u-orange" href="https://docs.nemslinux.com/en/latest/advanced/nemsupgrade.html" target="_blank">Upgrade Instructions</a></div>'; ?>
                                                 <?php if ($online == 0) echo '<div class="alert alert-danger fade in"><strong>Warning:</strong> NEMS can\'t connect to the update servers. Please make sure Internet is configured for your NEMS server and that github.com is not being blocked by your firewall/proxy.</div>'; ?>
                                                 <br /><br />
 <?php /*                        <div class="container content-sm">
