@@ -209,6 +209,23 @@ if (is_array($nemsconf) && isset($_POST) && count($_POST) > 0) { // Overwrite th
                 $nemsconfoutput .= $key . '=' . $value . PHP_EOL;
         }
         file_put_contents($nemsconffile,$nemsconfoutput); // overwrite the existing config
+
+        // Update NEMS Tactical Overview
+        $nagiostv = json_decode(file_get_contents('/var/www/nagiostv/client-settings.json'), true);
+        if ($nagiostv === null) {
+          // conf doesn't appear valid.
+          // Shouldn't happen...
+        } else {
+          $nagiostv['titleString'] = $nemsconf['alias'];
+          $newnagiostv = json_encode($nagiostv, JSON_PRETTY_PRINT);
+          if ($newnagiostv === false) {
+            // shouldn't get here
+          } else {
+            if (file_put_contents('/var/www/nagiostv/client-settings.json', $newnagiostv) === false) {
+              // shouldn't get here, but could if the file isn't writeable by the www-data user
+            }
+          }
+        }
 }
 if (!isset($nemsconf['alias']) || strlen($nemsconf['alias']) == 0) $nemsconf['alias'] = 'NEMS';
 

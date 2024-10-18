@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ver=1.6
+ver=1.7
 
 a2enmod ssl
 a2dissite 000-default
@@ -26,3 +26,8 @@ echo "SecServerSignature NEMS_Linux/$ver" >> /etc/apache2/conf-available/securit
 chown -R www-data:www-data /var/www/html/
 
 /bin/systemctl restart apache2
+
+# Allow NEMS SST to save NagiosTV (NEMS Tactical Overview) config
+if [[ -e /var/www/nagiostv/client-settings.json ]]; then
+  chown www-data:www-data /var/www/nagiostv/client-settings.json
+fi
