@@ -216,7 +216,7 @@ if (is_array($nemsconf) && isset($_POST) && count($_POST) > 0) { // Overwrite th
           // conf doesn't appear valid.
           // Shouldn't happen...
         } else {
-          $nagiostv['titleString'] = $nemsconf['alias'];
+          $nagiostv['titleString'] = 'NEMS Tactical Overview - ' . $nemsconf['alias'];
           $newnagiostv = json_encode($nagiostv, JSON_PRETTY_PRINT);
           if ($newnagiostv === false) {
             // shouldn't get here
