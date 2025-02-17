@@ -148,10 +148,10 @@
                   <div class="col-md-offset-2" style="display: flex; align-items: center; flex-wrap: wrap;">
 
                     <div class="col-md-4">
-                      <a href="https://ameridroid.com/discount/1.6?ref=nemslinux" target="_blank"><img src="/img/sponsors/ameriDroid.webp" class="img-responsive" style="max-height: 60px;" /></a>
+                      <a href="https://ameridroid.com/discount/1.6?ref=nemslinux" target="_blank"><img src="/img/sponsors/ameriDroid.webp" class="img-responsive" style="max-height: 60px;" alt="ameriDroid" /></a>
                     </div>
                     <div class="col-md-4">
-                      <a href="https://www.voyagersystems.cloud/" target="_blank"><img src="/img/sponsors/Voyager_Systems.webp" class="img-responsive" style="max-height: 60px;" /></a>
+                      <a href="https://nipitinthebot.com/" target="_blank"><img src="/img/sponsors/NipItInTheBot.webp" class="img-responsive" style="max-height: 60px;" alt="Nip it in the Bot"/></a>
                     </div>
 
                   </div>
@@ -161,7 +161,7 @@
                   <div class="col-md-offset-4" style="display: flex; align-items: center; flex-wrap: wrap;">
 
                     <div class="col-md-4">
-                      <a href="https://Category5.TV/" target="_blank"><img src="/img/sponsors/cat5tv_network.webp" class="img-responsive" style="max-height: 30px;" /></a>
+                      <a href="https://Category5.TV/" target="_blank"><img src="/img/sponsors/cat5tv_network.webp" class="img-responsive" style="max-height: 30px;" alt="Category5 TV Network" /></a>
                     </div>
 
                   </div>
