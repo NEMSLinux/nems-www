@@ -10,5 +10,5 @@ fi
 dpkg-deb --build debpack ${package}.deb
 mv ${package}.deb /home/admin/repos/apt/nems/
 cd /home/admin/repos/apt/nems/
-reprepro includedeb 1.6 ${package}.deb
+reprepro includedeb 1.8 ${package}.deb
 rm ${package}.deb
