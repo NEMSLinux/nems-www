@@ -8,7 +8,11 @@ if [[ $EUID == 0 ]]; then
 fi
 
 dpkg-deb --build debpack ${package}.deb
-mv ${package}.deb /home/admin/repos/apt/nems/
-cd /home/admin/repos/apt/nems/
-reprepro includedeb 1.8 ${package}.deb
-rm ${package}.deb
+if [[ -e ${package}.deb ]]; then
+  mv ${package}.deb /home/admin/repos/apt/nems/
+  cd /home/admin/repos/apt/nems/
+  reprepro includedeb 1.8 ${package}.deb
+  rm ${package}.deb
+else
+  echo "ERROR: The package did not build."
+fi

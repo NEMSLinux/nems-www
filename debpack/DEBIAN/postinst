@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ver=1.7
+ver=1.8
 
 a2enmod ssl
 a2dissite 000-default
@@ -23,11 +23,16 @@ echo "SecServerSignature NEMS_Linux/$ver" >> /etc/apache2/conf-available/securit
     /bin/sed -i '/upload_max_filesize =/c\upload_max_filesize = 16M' /etc/php/*/phpdbg/php.ini
   fi
 
-chown -R www-data:www-data /var/www/html/
+# Harden the folder against code being added by non-sudo user
+# This prevents someone using sudoer access to compromize the server
+chown -R root:root /var/www/html
+chmod -R 755 /var/www/html
 
 /bin/systemctl restart apache2
 
 # Allow NEMS SST to save NagiosTV (NEMS Tactical Overview) config
 if [[ -e /var/www/nagiostv/client-settings.json ]]; then
   chown www-data:www-data /var/www/nagiostv/client-settings.json
+  chmod 664 /var/www/nagiostv/client-settings.json
+  chmod 755 /var/www/nagiostv
 fi
