@@ -260,7 +260,7 @@ abstract class LiveStatusCommand
         $command = "COMMAND ";
         $command .= sprintf("[%d] ", time());
         $command .= "{$this->action};";
-        $command .= join($this->args, ';');
+        $command .= join(';', $this->args);
         $command .= "\n\n";
         return $command;
     }

@@ -1,0 +1,4 @@
+# Grant nems-www (www-data) access to nems-userctl
+Defaults:www-data !setenv, secure_path="/usr/sbin:/usr/bin:/sbin:/bin"
+Cmnd_Alias NEMS_USERCTL = /usr/local/sbin/nems-userctl *
+www-data ALL=(root) NOPASSWD: NEMS_USERCTL

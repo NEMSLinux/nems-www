@@ -1,4 +1,6 @@
 <?php
+  include_once('/var/www/html/inc/auth.php');
+  nems_secure_session_start();
   require_once('bgcolor.php');
 ?><!DOCTYPE html>
 <!--[if IE 8]> <html lang="en" class="ie8"> <![endif]-->
@@ -57,6 +59,7 @@
 	<!-- CSS Theme -->
 	<link rel="stylesheet" href="https://cdn.zecheriah.com/site-assets/1.9.6/assets/css/headers/header-v6.css">
 	<link rel="stylesheet" href="https://cdn.zecheriah.com/site-assets/1.9.6/One-Pages/Classic/assets/css/theme-skins/one.dark.css">
+	<link rel="stylesheet" href="/css/admin.css">
 
         <!-- Fullcalendar -->
 	<link rel="stylesheet" href="/css/fullcalendar.min.css">
@@ -118,6 +121,7 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
 							  Configuration
 							</a>
 							<ul class="dropdown-menu">
+                                                          <?php if (ver('nems') >= 1.8) echo '<li><a href="/admin/users.php">User Manager</a></li>'; ?>
 							  <?php if (ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . '/info/">Server Overview</a></li>'; ?>
 							  <?php if (ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . '/config/">System Settings Tool</a></li>'; ?>
 							  <li><a href="/nconf/" target="_blank">Configurator</a></li>
@@ -196,6 +200,11 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
                 						<li><a href="https://nemslinux.com/" target="_blank">Official NEMS Linux Web Site</a></li>
 					                </ul>
 						</li>
+
+						<li class="dropdown">
+                                                <?php if (!empty($_SESSION['user'])) { echo '<a href="/logout/">Logout (' . nems_h($_SESSION['user']) . ')</a>'; } else { echo '<a href="/login/">Login</a>'; } ?>
+						</li>
+
 
 					</ul>
 				</div>

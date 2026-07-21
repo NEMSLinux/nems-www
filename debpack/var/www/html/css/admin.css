@@ -1,0 +1,19 @@
+  /* NEMS Admin polish */
+  .nems-card { border: 0; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,.25); }
+  .nems-card .card-header { padding:.9rem 1.25rem; font-weight:600; }
+  .nems-section-title { font-weight:700; letter-spacing:.2px; }
+  .table-nems { margin:0; }
+  .table-nems th { font-weight:600; text-transform:uppercase; letter-spacing:.3px; font-size:.85rem; }
+  .table-nems td, .table-nems th { vertical-align:middle; }
+  .badge { border-radius: 8px; font-weight:600; }
+  .btn-sm { border-radius: .5rem; }
+  .nems-actions .btn { margin-right:.35rem; }
+  .nems-actions form { display:inline; }
+  /* dark harmony */
+  body .card.bg-dark, .card.bg-dark .card-body { background:#111; }
+  .table-dark tbody tr { border-color: rgba(255,255,255,.08); }
+  .table-dark td, .table-dark th { color:#e7e7e7; }
+  .table-dark .text-muted { color:#b9b9b9 !important; }
+  .collapse-row { background:rgba(255,255,255,.04); }
+  .form-control, .form-select { background:#0d0f12; color:#e7e7e7; border-color:#2a2d33; }
+  .form-control:focus, .form-select:focus { border-color:#4ea3ff; box-shadow:0 0 0 .2rem rgba(78,163,255,.15); }

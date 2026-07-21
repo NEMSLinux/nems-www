@@ -28,11 +28,23 @@ echo "SecServerSignature NEMS_Linux/$ver" >> /etc/apache2/conf-available/securit
 chown -R root:root /var/www/html
 chmod -R 755 /var/www/html
 
-/bin/systemctl restart apache2
-
 # Allow NEMS SST to save NagiosTV (NEMS Tactical Overview) config
 if [[ -e /var/www/nagiostv/client-settings.json ]]; then
   chown www-data:www-data /var/www/nagiostv/client-settings.json
   chmod 664 /var/www/nagiostv/client-settings.json
   chmod 755 /var/www/nagiostv
 fi
+
+# When nems-info is called by the web interface (for NEMS Version info for example) it will try to create this folder but does not have write access.
+# So pre-create it and give www-data access.
+  if [[ ! -d /var/www/.nems_cache ]]; then
+    mkdir /var/www/.nems_cache
+    chown www-data:www-data /var/www/.nems_cache
+    chmod 755 /var/www/.nems_cache
+  fi
+
+# Set permissions for sudoers file which allows www-data to run nems-userctl
+  chown root:root /etc/sudoers.d/nems-userctl
+  chmod 440 /etc/sudoers.d/nems-userctl
+
+/bin/systemctl restart apache2
