@@ -163,6 +163,7 @@ function nems_verify_htpasswd(string $user, string $pass): bool {
 
 function nems_require_login(): void {
     if (empty($_SESSION['user']) || empty($_SESSION['role'])) {
+        $_SESSION['returnAfterLogin'] = $_SERVER['REQUEST_URI'];
         header('Location: /login/');
         exit;
     }
@@ -171,6 +172,6 @@ function nems_require_login(): void {
 function nems_require_admin(): void {
     nems_require_login();
     if (!in_array($_SESSION['role'], ['admin','superadmin'], true)) {
-        http_response_code(403); exit('Admins only.');
+        http_response_code(403); exit('This section requires admin-level access.');
     }
 }

@@ -7,7 +7,7 @@ include('/var/www/html/inc/auth.php');
 nems_secure_session_start();
 
 if (!empty($_SESSION['user']) && !empty($_SESSION['role'])) {
-    header('Location: /admin/users.php'); exit;
+    header('Location: /admin/welcome.php'); exit;
 }
 
 $err = '';
@@ -39,7 +39,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user'] = $u;
                 $_SESSION['role'] = $role;
                 $_SESSION['__last'] = time();
-                header('Location: /admin/users.php'); exit;
+                // Return to the page they were trying to access before being prompted to login
+                if (isset($_SESSION['returnAfterLogin'])) {
+                  $redirect = $_SESSION['returnAfterLogin'];
+                  unset($_SESSION['returnAfterLogin']);
+                } else {
+                  $redirect = '/admin/welcome.php';
+                }
+                header('Location: ' . $redirect); exit;
             }
         } else {
             $_SESSION['__fail']++;
