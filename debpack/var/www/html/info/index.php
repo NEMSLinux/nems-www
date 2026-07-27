@@ -8,6 +8,10 @@
     exit('Requires NEMS 1.3+');
   }
 
+  include('/var/www/html/inc/auth.php');
+  nems_secure_session_start();
+  nems_require_login();
+
   if (file_exists('/var/log/nems/stats.log')) {
     $tmp=file('/var/log/nems/stats.log');
     if (is_array($tmp)) {

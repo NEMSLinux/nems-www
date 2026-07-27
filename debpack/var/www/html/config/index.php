@@ -32,6 +32,11 @@
   if (ver('nems') < 1.3) {
     exit('Requires NEMS 1.3+');
   }
+
+  include('/var/www/html/inc/auth.php');
+  nems_secure_session_start();
+  nems_require_admin();
+
   include('/var/www/html/inc/header.php');
 
   // Add the color chooser
