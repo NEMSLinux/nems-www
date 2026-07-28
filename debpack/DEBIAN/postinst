@@ -7,6 +7,11 @@ a2dissite 000-default
 a2ensite nems-dashboard
 a2enmod rewrite
 
+# For NEMS ULA SSO
+a2enmod lua
+a2enmod headers
+a2enconf nems_sso
+
 # Change Apache footer
 a2enmod security2
 a2enconf security
