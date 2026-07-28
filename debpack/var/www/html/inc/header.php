@@ -116,15 +116,15 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
 				<div class="menu-container">
 					<ul class="nav navbar-nav">
 
-						<li class="dropdown">
+						<li <?php if (!nems_has_role('operator')) echo 'style="display:none;" '; ?>class="dropdown">
 							<a href="javascript:void(0);" class="dropdown-toggle" data-toggle="dropdown">
 							  Configuration
 							</a>
 							<ul class="dropdown-menu">
-                                                          <?php if (ver('nems') >= 1.8) echo '<li><a href="/admin/users.php">User Manager</a></li>'; ?>
-							  <?php if (ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . '/info/">Server Overview</a></li>'; ?>
-							  <?php if (ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . '/config/">System Settings Tool</a></li>'; ?>
-							  <li><a href="/nconf/" target="_blank">Configurator</a></li>
+                                                          <?php if (nems_has_role('admin') && ver('nems') >= 1.8) echo '<li><a href="/admin/users.php">User Manager</a></li>'; ?>
+							  <?php if (nems_has_role('operator') && ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . '/info/">Server Overview</a></li>'; ?>
+							  <?php if (nems_has_role('admin') && ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . '/config/">System Settings Tool</a></li>'; ?>
+							  <?php if (nems_has_role('admin')) echo '<li><a href="/nconf/" target="_blank">Configurator</a></li>'; ?>
 							</ul>
 						</li>
 
@@ -135,7 +135,7 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
 							<ul class="dropdown-menu">
 
                                                           <li><h4 style="padding: 0 0 4px 4px; margin-bottom: 0;">Modern</h4></li>
-							  <?php if (ver('nems') >= 1.4) echo '<li><a href="/adagios/" target="_blank">Adagios</a></li>'; ?>
+							  <?php if (nems_has_role('viewer') && ver('nems') >= 1.4) echo '<li><a href="/adagios/" target="_blank">Adagios</a></li>'; ?>
 							  <?php if (ver('nems') >= 1.4) echo '<li><a href="/mobile/" target="_blank">Mobile UI</a></li>'; ?>
 							  <?php if (ver('nems') >= 1.4) echo '<li><a href="/tv/" target="_blank">TV Dashboard</a></li>'; ?>
 							  <?php if (ver('nems') >= 1.6 || file_exists('/var/www/nagiostv')) echo '<li><a href="/nagiostv/" target="_blank">Tactical Overview</a></li>'; ?>
@@ -164,16 +164,16 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
 							</a>
 
 							<ul class="dropdown-menu">
- 							  <?php if (checkConfEnabled('monitorix')) { echo '<li><a href="/monitorix/">Monitorix</a></li>'; } ?>
-							  <?php if (ver('nems') >= 1.4 && ver('platform')->num != 21) echo '<li><a href="https://' . $self->host . ':9090" target="_blank">Cockpit</a></li>'; ?>
-							  <?php if (ver('nems') >= 1.7) echo '<li><a href="/power">Power Controller</a></li>'; ?>
+ 							  <?php if (nems_has_role('viewer') && checkConfEnabled('monitorix')) { echo '<li><a href="/monitorix/">Monitorix</a></li>'; } ?>
+							  <?php if (nems_has_role('operator') && ver('nems') >= 1.4 && ver('platform')->num != 21) echo '<li><a href="https://' . $self->host . ':9090" target="_blank">Cockpit</a></li>'; ?>
+							  <?php if (nems_has_role('operator') && ver('nems') >= 1.7) echo '<li><a href="/power">Power Controller</a></li>'; ?>
 							  <?php if ((ver('platform')->num < 10 || (ver('platform')->num >= 150 && ver('platform')->num <= 199)) && checkConfEnabled('rpi-monitor')) { echo '<li><a href="http://' . $self->host . ':8888" target="_blank">RPi-Monitor</a></li>'; } ?>
-							  <?php if (ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . ':2812" target="_blank"><em>monit</em> Service Monitor</a></li>'; ?>
-							  <?php if (file_exists('/usr/lib/systemd/system/glancesweb.service')) echo '<li><a href="http://' . $self->host . ':61208" target="_blank">Glances</a></li>'; ?>
+							  <?php if (nems_has_role('operator') && ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . ':2812" target="_blank"><em>monit</em> Service Monitor</a></li>'; ?>
+							  <?php if (nems_has_role('operator') && file_exists('/usr/lib/systemd/system/glancesweb.service')) echo '<li><a href="http://' . $self->host . ':61208" target="_blank">Glances</a></li>'; ?>
 							</ul>
 						</li>
 
-						<li class="dropdown">
+						<li <?php if (!nems_has_role('operator')) echo 'style="display:none;" '; ?>class="dropdown">
 							<a href="/backup/nems-migrator/">Migrator</a>
 						</li>
 

@@ -10,8 +10,88 @@
   include('/var/www/html/inc/header.php');
   $platform = ver('platform');
 ?>
-<div class="container" style="margin-top: 100px; padding-bottom: 100px;">
-  <h2><b>NEMS</b> User Manager</h2>
+
+<style>
+  /* Scoped Bootstrap 3 Dark Theme Overrides for NEMS */
+  .nems-user-manager { color: #e0e0e0; }
+  .nems-user-manager .page-header { border-bottom-color: #333; margin-top: 0; }
+  .nems-user-manager .page-header h2 { color: #ffffff; }
+  .nems-user-manager .page-header small { color: #a0a0a0; }
+
+  /* Panels */
+  .nems-user-manager .panel-default {
+    background-color: #242526;
+    border-color: #3a3b3c;
+  }
+  .nems-user-manager .panel-default > .panel-heading {
+    background-color: #2e3033;
+    border-color: #3a3b3c;
+    color: #ffffff;
+  }
+  .nems-user-manager .panel-primary {
+    background-color: #242526;
+    border-color: #205081;
+  }
+  .nems-user-manager .panel-primary > .panel-heading {
+    background-color: #286090;
+    border-color: #205081;
+    color: #ffffff;
+  }
+  .nems-user-manager .panel-body {
+    background-color: #242526;
+    color: #e0e0e0;
+  }
+
+  /* Tables */
+  .nems-user-manager .table { color: #e0e0e0; }
+  .nems-user-manager .table > thead > tr > th {
+    border-bottom-color: #3a3b3c;
+    color: #ffffff;
+  }
+  .nems-user-manager .table > tbody > tr > td {
+    border-top-color: #3a3b3c;
+    vertical-align: middle;
+  }
+  .nems-user-manager .table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: #1c1d1e;
+  }
+  .nems-user-manager .table-hover > tbody > tr:hover {
+    background-color: #2e3033;
+  }
+
+  /* Form Controls */
+  .nems-user-manager .form-control {
+    background-color: #141414;
+    border-color: #3a3b3c;
+    color: #ffffff;
+  }
+  .nems-user-manager .form-control:focus {
+    background-color: #141414;
+    border-color: #337ab7;
+    color: #ffffff;
+  }
+  .nems-user-manager .form-control::placeholder {
+    color: #777777;
+  }
+
+  /* Expandable Detail Rows */
+  .nems-user-manager .detail-row-bg {
+    background-color: #141414 !important;
+    border-top: 1px solid #3a3b3c;
+    border-bottom: 1px solid #3a3b3c;
+  }
+
+  /* Text & Labels */
+  .nems-user-manager .text-muted { color: #909090 !important; }
+  .nems-user-manager .label-default { background-color: #444444; }
+</style>
+
+<div class="container nems-user-manager" style="margin-top: 100px; padding-bottom: 60px;">
+
+  <div class="page-header">
+    <h2><strong>NEMS</strong> <small>User Manager</small></h2>
+  </div>
+
 <?php
 
 function run_userctl(array $args, ?string $password = null): array {
@@ -47,13 +127,11 @@ function get_user_list(): array {
 }
 
 function run_userctl_with_password_file(array $baseArgs, string $password, string $actorUser): array {
-    // create a secure temp file
     $tmpFile = tempnam(sys_get_temp_dir(), 'nems-pass-');
     if ($tmpFile === false) {
         return [1, '', 'Unable to create temp file'];
     }
 
-    // lock it down and write password
     chmod($tmpFile, 0600);
     $fh = fopen($tmpFile, 'w');
     if (!$fh) {
@@ -63,16 +141,12 @@ function run_userctl_with_password_file(array $baseArgs, string $password, strin
     fwrite($fh, $password . "\n");
     fclose($fh);
 
-    // build final arg list including actor
     $args = array_merge(
         $baseArgs,
         ['--password-file', $tmpFile, '--actor', $actorUser]
     );
 
-    // run it
     [$code,$out,$err] = run_userctl($args, null);
-
-    // cleanup ASAP
     @unlink($tmpFile);
 
     return [$code,$out,$err];
@@ -93,6 +167,11 @@ if ($sessionUser === '') { http_response_code(403); exit('Not logged in'); }
 $roles = get_roles();
 $prec  = ['viewer'=>1,'reporter'=>2,'operator'=>3,'admin'=>4,'superadmin'=>5];
 
+// Sort $roles based on the values in $prec
+usort($roles, function($a, $b) use ($prec) {
+    return ($prec[$a] ?? 0) <=> ($prec[$b] ?? 0);
+});
+
 $me     = get_user_info_json($sessionUser);
 $myRole = $me['role'] ?? 'viewer';
 if (!in_array($myRole, ['admin','superadmin'], true)) {
@@ -105,7 +184,7 @@ function can_act_on(
     string $actorRole,
     string $target,
     string $targetRole,
-    string $superadminUser,   // the immutable boot account from nems-init
+    string $superadminUser,
     array $prec,
     string $action,
     ?string $newRole = null
@@ -118,74 +197,32 @@ function can_act_on(
     $actorIsSuper    = ($actorRole === 'superadmin');
     $targetIsSuper   = ($targetRole === 'superadmin');
 
-    // 1. Self rules
-    // - You cannot delete yourself or change your own role.
-    // - You CAN change your own password.
     if ($isSelf) {
-        if ($action === 'setpass') {
-            // allowed
-        } else {
+        if ($action !== 'setpass') {
             return false;
         }
     }
 
-    // 2. Boot account protection
-    // The "main" superadmin from nems-init cannot be:
-    // - deleted
-    // - demoted
-    // Basically: hands off, except password changes.
     if ($isBootAccount) {
         if ($action === 'delete' || $action === 'setrole') {
             return false;
         }
-        // setpass on boot account:
-        // only allow if actor is that same account, or actor is a superadmin
         if ($action === 'setpass' && !$actorIsSuper && !$isSelf) {
             return false;
         }
     }
 
-    // 3. Role creation / promotion rules
-    // You cannot create or assign a role higher than yourself.
-    // So:
-    // - admin cannot create/promote superadmin
-    // - operator cannot promote to admin, etc.
     if (($action === 'create' || $action === 'setrole') && $newRoleLevel !== null) {
         if ($newRoleLevel > $actorLevel) {
             return false;
         }
     }
 
-    // 4. General "who outranks who" rules
-    // Below superadmin: you may not touch accounts of equal-or-higher level.
-    // Example:
-    // - admin cannot delete/downgrade admin
-    // - admin cannot act on superadmin
-    // - operator cannot act on operator/admin/superadmin
-    //
-    // BUT: superadmin is special (next section).
     if (!$actorIsSuper) {
-        // not superadmin
-        // deny if target outranks or matches privilege
         if ($targetLevel >= $actorLevel) {
-            // exception: self password already handled above, so here it's always a "no"
             return false;
         }
     }
-
-    // 5. Superadmin special case:
-    // superadmin CAN act on other superadmins, with 2 exceptions already handled:
-    // - can't act on self (handled in #1)
-    // - can't act on boot account for delete/setrole (handled in #2)
-    //
-    // So if actor is superadmin, we allow acting on another superadmin.
-    // No extra block here.
-
-    // 6. Final action-specific sanity:
-    // Deleting someone of lower privilege? ok.
-    // Changing role to lower/equal than you? ok (already guarded).
-    // Changing password for someone else? Generally okay if you got here.
-    // Nothing else to block.
 
     return true;
 }
@@ -199,11 +236,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $role     = trim($_POST['role'] ?? '');
     $password = $_POST['password'] ?? null;
 
-
     $targetInfo  = get_user_info_json($username);
     $targetRole  = $targetInfo['role'] ?? ($action==='create' ? $role : 'viewer');
 
-    // use correct newRole param
     $newRoleForCheck = null;
     if ($action === 'create' || $action === 'setrole') {
       $newRoleForCheck = $role;
@@ -222,37 +257,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $err = 'Insufficient privilege or disallowed target.';
     }
 
-    // Validate action
     $allowed_actions = ['create','delete','setrole','setpass'];
     if (!in_array($action, $allowed_actions, true)) { $err='Bad action'; }
 
-    // Validate username
     if (!$err && !preg_match('/^[a-z_][a-z0-9_-]*[$]?$/i', $username)) { $err='Invalid username.'; }
 
-    // Validate role if provided
     if (!$err && in_array($action, ['create','setrole'], true)) {
         if ($role === '' || !in_array($role, $roles, true)) { $err='Invalid role.'; }
     }
 
-    // Validate password if needed
     if (!$err && in_array($action, ['create','setpass'], true)) {
         if (!is_string($password) || strlen($password) < 12 || strlen($password) > 128 || preg_match('/[[:cntrl:]]/', $password)) {
             $err = 'Invalid password (12–128 chars, no control characters).';
         }
     }
 
-    // Target info
     $targetInfo  = !$err ? get_user_info_json($username) : [];
     $targetRole  = $targetInfo['role'] ?? ($action==='create' ? $role : 'viewer');
 
-    // Privilege rules
     if (!$err) {
         if (!can_act_on($sessionUser, $myRole, $username, $targetRole, $superadminUser, $prec, $action)) {
             $err = 'Insufficient privilege or disallowed target.';
         }
     }
 
-    // Execute
     if (!$err) {
         if ($action === 'create') {
           [$c,$o,$e] = run_userctl_with_password_file(
@@ -287,160 +315,160 @@ $users = get_user_list();
 
 <!-- Alerts -->
 <?php if($err): ?>
-  <div class="alert alert-danger mt-3"><?= h($err) ?></div>
+  <div class="alert alert-danger alert-dismissible" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+    <?= h($err) ?>
+  </div>
 <?php elseif($msg): ?>
-  <div class="alert alert-success mt-3"><?= nl2br(h($msg)) ?></div>
+  <div class="alert alert-success alert-dismissible" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+    <?= nl2br(h($msg)) ?>
+  </div>
 <?php endif; ?>
 
-<!-- User List -->
-<div class="card nems-card bg-dark mt-4 mb-4">
-  <div class="card-header bg-light">
-    <span class="nems-section-title">Users</span>
+<!-- User List Panel -->
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title"><strong>Users</strong></h3>
   </div>
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-dark table-striped table-hover table-nems align-middle mb-0">
-        <thead>
-          <tr>
-            <th style="width:28%">Username</th>
-            <th style="width:12%">Role</th>
-            <th style="width:20%">Created</th>
-            <th style="width:20%">Updated</th>
-            <th class="text-end" style="width:20%">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($users as $u):
-            $uname = $u['username'] ?? '';
-            $urole = $u['role'] ?? 'viewer';
-            $canDelete = can_act_on($sessionUser,$myRole,$uname,$urole,$superadminUser,$prec,'delete');
-            $canRole   = can_act_on($sessionUser,$myRole,$uname,$urole,$superadminUser,$prec,'setrole');
-            $canPass   = can_act_on($sessionUser,$myRole,$uname,$urole,$superadminUser,$prec,'setpass');
-          ?>
-          <tr>
-            <td>
-              <strong><?= h($uname) ?></strong>
-              <?php if ($uname===$sessionUser): ?><span class="badge bg-info ms-2">you</span><?php endif; ?>
-              <?php if ($uname===$superadminUser): ?><span class="badge bg-dark text-white ms-1">superadmin</span><?php endif; ?>
-            </td>
-            <td><span class="badge bg-secondary"><?= h($urole) ?></span></td>
-            <td class="text-muted"><?= isset($u['created_at']) && $u['created_at'] ? date('Y-m-d H:i', (int)$u['created_at']) : '—' ?></td>
-            <td class="text-muted"><?= isset($u['updated_at']) && $u['updated_at'] ? date('Y-m-d H:i', (int)$u['updated_at']) : '—' ?></td>
-            <td class="text-end nems-actions">
-              <button class="btn btn-sm btn-outline-warning"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#role-<?= h($uname) ?>"
-                      <?= $canRole ? '' : 'disabled' ?>>
-                Change Role
-              </button>
-              <button class="btn btn-sm btn-outline-primary"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#pass-<?= h($uname) ?>"
-                      <?= $canPass ? '' : 'disabled' ?>>
-                Password
-              </button>
-              <form method="post" onsubmit="return confirm('Delete <?= h($uname) ?> permanently?');" class="ms-1">
-                <input type="hidden" name="csrf" value="<?= h($_SESSION['csrf']) ?>">
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="username" value="<?= h($uname) ?>">
-                <button class="btn btn-sm btn-outline-danger" <?= $canDelete ? '' : 'disabled' ?>>Delete</button>
-              </form>
-            </td>
-          </tr>
+  <div class="table-responsive">
+    <table class="table table-striped table-hover" style="margin-bottom: 0;">
+      <thead>
+        <tr>
+          <th style="width:25%">Username</th>
+          <th style="width:15%">Role</th>
+          <th style="width:20%">Created</th>
+          <th style="width:20%">Updated</th>
+          <th class="text-right" style="width:20%">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($users as $u):
+          $uname = $u['username'] ?? '';
+          $urole = $u['role'] ?? 'viewer';
+          $canDelete = can_act_on($sessionUser,$myRole,$uname,$urole,$superadminUser,$prec,'delete');
+          $canRole   = can_act_on($sessionUser,$myRole,$uname,$urole,$superadminUser,$prec,'setrole');
+          $canPass   = can_act_on($sessionUser,$myRole,$uname,$urole,$superadminUser,$prec,'setpass');
+        ?>
+        <tr>
+          <td>
+            <strong><?= h($uname) ?></strong>
+            <?php if ($uname===$sessionUser): ?> <span class="label label-info">you</span><?php endif; ?>
+            <?php if ($uname===$superadminUser): ?> <span class="label label-primary">superadmin</span><?php endif; ?>
+          </td>
+          <td><span class="label label-default"><?= h($urole) ?></span></td>
+          <td class="text-muted"><?= isset($u['created_at']) && $u['created_at'] ? date('Y-m-d H:i', (int)$u['created_at']) : '—' ?></td>
+          <td class="text-muted"><?= isset($u['updated_at']) && $u['updated_at'] ? date('Y-m-d H:i', (int)$u['updated_at']) : '—' ?></td>
+          <td class="text-right">
+            <button class="btn btn-xs btn-warning"
+                    data-toggle="collapse"
+                    data-target="#role-<?= h($uname) ?>"
+                    <?= $canRole ? '' : 'disabled' ?>>
+              Change Role
+            </button>
+            <button class="btn btn-xs btn-info"
+                    data-toggle="collapse"
+                    data-target="#pass-<?= h($uname) ?>"
+                    <?= $canPass ? '' : 'disabled' ?>>
+              Password
+            </button>
+            <form method="post" onsubmit="return confirm('Delete <?= h($uname) ?> permanently?');" style="display:inline-block; margin-left:2px;">
+              <input type="hidden" name="csrf" value="<?= h($_SESSION['csrf']) ?>">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="username" value="<?= h($uname) ?>">
+              <button class="btn btn-xs btn-danger" <?= $canDelete ? '' : 'disabled' ?>>Delete</button>
+            </form>
+          </td>
+        </tr>
 
-          <!-- Change Role row -->
-          <tr class="collapse collapse-row" id="role-<?= h($uname) ?>">
-            <td colspan="5" class="p-3">
-              <form method="post" class="row g-2 align-items-end">
-                <input type="hidden" name="csrf" value="<?= h($_SESSION['csrf']) ?>">
-                <input type="hidden" name="action" value="setrole">
-                <input type="hidden" name="username" value="<?= h($uname) ?>">
-                <div class="col-md-4">
-                  <label class="form-label">New Role</label>
-                  <select name="role" class="form-select" <?= $canRole ? '' : 'disabled' ?>>
-                    <?php foreach($roles as $r): ?>
-                      <option value="<?= h($r) ?>" <?= $r===$urole?'selected':'' ?>><?= h($r) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div class="col-md-2">
-                  <button class="btn btn-warning w-100" <?= $canRole ? '' : 'disabled' ?>>Apply</button>
-                </div>
-              </form>
-            </td>
-          </tr>
+        <!-- Change Role row -->
+        <tr class="collapse" id="role-<?= h($uname) ?>">
+          <td colspan="5" class="detail-row-bg" style="padding: 15px;">
+            <form method="post" class="form-inline">
+              <input type="hidden" name="csrf" value="<?= h($_SESSION['csrf']) ?>">
+              <input type="hidden" name="action" value="setrole">
+              <input type="hidden" name="username" value="<?= h($uname) ?>">
+              <div class="form-group" style="margin-right: 10px;">
+                <label for="role-select-<?= h($uname) ?>" style="margin-right: 5px;">New Role:</label>
+                <select id="role-select-<?= h($uname) ?>" name="role" class="form-control input-sm" <?= $canRole ? '' : 'disabled' ?>>
+                  <?php foreach($roles as $r): ?>
+                    <option value="<?= h($r) ?>" <?= $r===$urole?'selected':'' ?>><?= h($r) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <button class="btn btn-sm btn-warning" <?= $canRole ? '' : 'disabled' ?>>Apply</button>
+            </form>
+          </td>
+        </tr>
 
-          <!-- Change Password row -->
-          <tr class="collapse collapse-row" id="pass-<?= h($uname) ?>">
-            <td colspan="5" class="p-3">
-              <form method="post" class="row g-2 align-items-end">
-                <input type="hidden" name="csrf" value="<?= h($_SESSION['csrf']) ?>">
-                <input type="hidden" name="action" value="setpass">
-                <input type="hidden" name="username" value="<?= h($uname) ?>">
-                <div class="col-md-6">
-                  <label class="form-label">New Password</label>
-                  <input name="password" type="password" class="form-control" minlength="12" maxlength="128" required>
-                </div>
-                <div class="col-md-2">
-                  <button class="btn btn-primary w-100">Change</button>
-                </div>
-              </form>
-            </td>
-          </tr>
-          <?php endforeach; ?>
+        <!-- Change Password row -->
+        <tr class="collapse" id="pass-<?= h($uname) ?>">
+          <td colspan="5" class="detail-row-bg" style="padding: 15px;">
+            <form method="post" class="form-inline">
+              <input type="hidden" name="csrf" value="<?= h($_SESSION['csrf']) ?>">
+              <input type="hidden" name="action" value="setpass">
+              <input type="hidden" name="username" value="<?= h($uname) ?>">
+              <div class="form-group" style="margin-right: 10px;">
+                <label for="pass-input-<?= h($uname) ?>" style="margin-right: 5px;">New Password:</label>
+                <input id="pass-input-<?= h($uname) ?>" name="password" type="password" class="form-control input-sm" minlength="12" maxlength="128" required style="width: 250px;">
+              </div>
+              <button class="btn btn-sm btn-primary">Change Password</button>
+            </form>
+          </td>
+        </tr>
+        <?php endforeach; ?>
 
-          <?php if (empty($users)): ?>
-            <tr><td colspan="5" class="text-center text-muted p-4">No users found.</td></tr>
-          <?php endif; ?>
-        </tbody>
-      </table>
-    </div>
+        <?php if (empty($users)): ?>
+          <tr><td colspan="5" class="text-center text-muted" style="padding: 20px;">No users found.</td></tr>
+        <?php endif; ?>
+      </tbody>
+    </table>
   </div>
 </div>
 
-<!-- Create User -->
-<div class="card nems-card bg-dark mb-5">
-  <div class="card-header bg-primary text-white">
-    <span class="nems-section-title">Create User</span>
+<!-- Create User Panel -->
+<div class="panel panel-primary" style="margin-top: 30px;">
+  <div class="panel-heading">
+    <h3 class="panel-title"><strong>Create User</strong></h3>
   </div>
-  <div class="card-body">
-    <form method="post" class="row g-3">
+  <div class="panel-body">
+    <form method="post">
       <input type="hidden" name="csrf" value="<?= h($_SESSION['csrf']) ?>">
       <input type="hidden" name="action" value="create">
-      <div class="col-md-3">
-        <label class="form-label">Username</label>
-        <input name="username" class="form-control" required pattern="[A-Za-z_][A-Za-z0-9_-]*\$?" maxlength="32">
-      </div>
-      <div class="col-md-5">
-        <label class="form-label">Password</label>
-        <input name="password" type="password" class="form-control" minlength="12" maxlength="128" required>
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Role</label>
-        <select name="role" class="form-select" required>
-          <option value="">Select</option>
-          <?php foreach($roles as $r): ?>
-            <option value="<?= h($r) ?>"><?= h($r) ?></option>
-          <?php endforeach; ?>
-        </select>
-      </div>
-      <div class="col-md-2 d-flex align-items-end">
-        <button class="btn btn-success w-100">Create</button>
+      <div class="row">
+        <div class="col-sm-3">
+          <div class="form-group">
+            <label for="create-username">Username</label>
+            <input id="create-username" name="username" class="form-control" required pattern="[A-Za-z_][A-Za-z0-9_-]*\$?" maxlength="32" placeholder="Username">
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div class="form-group">
+            <label for="create-password">Password</label>
+            <input id="create-password" name="password" type="password" class="form-control" minlength="12" maxlength="128" required placeholder="Min 12 characters">
+          </div>
+        </div>
+        <div class="col-sm-3">
+          <div class="form-group">
+            <label for="create-role">Role</label>
+            <select id="create-role" name="role" class="form-control" required>
+              <option value=""></option>
+              <?php foreach($roles as $r): ?>
+                <option value="<?= h($r) ?>"><?= h($r) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <div class="col-sm-2">
+          <div class="form-group">
+            <label class="hidden-xs">&nbsp;</label>
+            <button type="submit" class="btn btn-success btn-block">Create User</button>
+          </div>
+        </div>
       </div>
     </form>
   </div>
 </div>
-
-<?php if($err || $msg): ?>
-  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
-    <div class="toast align-items-center text-bg-<?= $err ? 'danger' : 'success' ?> border-0 show">
-      <div class="d-flex">
-        <div class="toast-body"><?= nl2br(h($err ?: $msg)) ?></div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-      </div>
-    </div>
-  </div>
-<?php endif; ?>
 
 </div>
 <?php

@@ -171,7 +171,35 @@ function nems_require_login(): void {
 
 function nems_require_admin(): void {
     nems_require_login();
-    if (!in_array($_SESSION['role'], ['admin','superadmin'], true)) {
-        http_response_code(403); exit('This section requires admin-level access.');
+    if (!nems_has_role('admin')) {
+        http_response_code(403);
+        exit('This section requires admin-level access.');
     }
+}
+
+/**
+ * Check if the logged-in user meets or exceeds a required role level.
+ */
+function nems_has_role(string $min_role): bool {
+    if (empty($_SESSION['role'])) {
+        return false;
+    }
+
+    // Define role hierarchy levels (higher integer = greater access)
+    $hierarchy = [
+        'viewer'     => 1,
+        'user'       => 2,
+        'operator'   => 3,
+        'admin'      => 4,
+        'superadmin' => 5,
+    ];
+
+    $user_role = strtolower((string)$_SESSION['role']);
+    $required_role = strtolower($min_role);
+
+    // Default unmapped roles to level 0; required unknown roles to PHP_INT_MAX
+    $user_level = $hierarchy[$user_role] ?? 0;
+    $required_level = $hierarchy[$required_role] ?? PHP_INT_MAX;
+
+    return $user_level >= $required_level;
 }
