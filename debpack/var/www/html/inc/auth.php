@@ -188,7 +188,7 @@ function nems_has_role(string $min_role): bool {
     // Define role hierarchy levels (higher integer = greater access)
     $hierarchy = [
         'viewer'     => 1,
-        'user'       => 2,
+        'reporter'   => 2,
         'operator'   => 3,
         'admin'      => 4,
         'superadmin' => 5,
