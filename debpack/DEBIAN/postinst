@@ -2,9 +2,13 @@
 
 ver=1.8
 
+chown -R root:root /etc/apache2/conf-available/
+
 a2enmod ssl
 a2dissite 000-default
 a2ensite nems-dashboard
+a2enconf nconf.conf
+
 a2enmod rewrite
 
 # For NEMS ULA SSO
