@@ -5,13 +5,20 @@
 local OK       = 0   -- Access Granted
 local REDIRECT = 302 -- Temporary Redirect
 
--- Define role hierarchy levels (matches NEMS ULA logic and /var/www/html/inc/auth.php)
+-- Define role hierarchy levels with common NEMS role aliases
 local role_hierarchy = {
-    viewer     = 1,
-    reporter   = 2,
-    operator   = 3,
-    admin      = 4,
-    superadmin = 5,
+    viewer        = 1,
+    view          = 1,
+    reporter      = 2,
+    report        = 2,
+    operator      = 3,
+    oper          = 3,
+    op            = 3,
+    operators     = 3,
+    admin         = 4,
+    administrator = 4,
+    superadmin    = 5,
+    root          = 5,
 }
 
 local function nems_authorize(r, min_role)
@@ -42,18 +49,21 @@ local function nems_authorize(r, min_role)
     local content = f:read("*all")
     f:close()
 
-    -- Parse serialized PHP session variables
-    local user = content:match('user|s:%d+:"([^"]+)"')
-    local role = content:match('role|s:%d+:"([^"]+)"')
-    local last = content:match('__last|i:(%d+);')
-    local ip   = content:match('__ip|s:%d+:"([^"]+)"')
-    local ua   = content:match('__ua|s:%d+:"([^"]+)"')
+    -- Parse serialized PHP session variables cleanly (anchored to key boundaries)
+    local user = content:match('^user|s:%d+:"([^"]+)"') or content:match(';user|s:%d+:"([^"]+)"')
+    local role = content:match('^role|s:%d+:"([^"]+)"') or content:match(';role|s:%d+:"([^"]+)"')
+    local last = content:match('^__last|i:(%d+);')      or content:match(';__last|i:(%d+);')
+    local ip   = content:match('^__ip|s:%d+:"([^"]+)"')    or content:match(';__ip|s:%d+:"([^"]+)"')
+    local ua   = content:match('^__ua|s:%d+:"([^"]+)"')    or content:match(';__ua|s:%d+:"([^"]+)"')
 
     -- Must have valid user & role stored in PHP session
     if not user or not role then
         r.headers_out["Location"] = "/login/"
         return REDIRECT
     end
+
+    -- Trim whitespace and normalize case
+    role = role:gsub("%s+", ""):lower()
 
     -- Guard: Idle timeout (1800 seconds / 30 minutes)
     if last then
@@ -79,7 +89,7 @@ local function nems_authorize(r, min_role)
     end
 
     -- Authorization: Check role hierarchy level
-    local user_level = role_hierarchy[role:lower()] or 0
+    local user_level = role_hierarchy[role] or 0
     local required_level = role_hierarchy[min_role:lower()] or 999
 
     if user_level < required_level then
@@ -88,13 +98,13 @@ local function nems_authorize(r, min_role)
         return REDIRECT
     end
 
-    -- Access Granted: Inject REMOTE_USER for backend applications (Adagios, NConf, etc.)
+    -- Access Granted: Inject REMOTE_USER for backend applications
     r.user = user
     r.headers_in["REMOTE_USER"] = user
     r.headers_in["REMOTE-USER"] = user
     r.headers_in["HTTP_REMOTE_USER"] = user
     r.headers_in["X-Remote-User"] = user
-    
+
     return OK
 end
 
