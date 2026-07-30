@@ -84,7 +84,7 @@ local function nems_authorize(r, min_role)
 
     if user_level < required_level then
         -- User is logged in, but role level is too low
-        r.headers_out["Location"] = "/403.php"
+        r.headers_out["Location"] = "/errors/403.php"
         return REDIRECT
     end
 
