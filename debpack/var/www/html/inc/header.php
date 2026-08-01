@@ -156,15 +156,10 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
                                                           ?>
 
                                                           <li><h4 style="padding: 0 0 4px 4px; margin: 0;">Legacy</h4></li>
-							  <?php
-							    if (ver('nems') >= 1.4) {
-							      echo '<li><a href="/nagios/" target="_blank">Nagios Core</a></li>';
-                                                            } else {
-							      echo '<li><a href="/nagios3/" target="_blank">Nagios Core</a></li>';
-							    }
-							  ?>
-							  <li><a href="/nagvis/" target="_blank">NagVis</a></li>
-							  <?php if (ver('nems') < 1.4) echo '<li><a href="/check_mk/" target="_blank">Check_MK Multisite</a></li>'; ?>
+
+							  <?php if (nems_has_role('operator')) echo '<li><a href="/nagios/" target="_blank">Nagios Core</a></li>';
+
+							  <?php if (nems_has_role('reporter')) echo '<li><a href="/nagvis/" target="_blank">NagVis</a></li>'; ?>
 							  <?php if (ver('nems') >= 1.5) echo '<li><a href="/nagios/cgi-bin/show.cgi" target="_blank">Nagios Graphs</a></li>'; ?>
 							</ul>
 						</li>
