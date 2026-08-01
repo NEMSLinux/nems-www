@@ -125,6 +125,17 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
 							  <?php if (nems_has_role('operator') && ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . '/info/">Server Overview</a></li>'; ?>
 							  <?php if (nems_has_role('admin') && ver('nems') >= 1.3) echo '<li><a href="https://' . $self->host . '/config/">System Settings Tool</a></li>'; ?>
 							  <?php if (nems_has_role('admin')) echo '<li><a href="/nconf/" target="_blank">Configurator</a></li>'; ?>
+                                                          <?php if (nems_has_role('superadmin') && ver('nems') >= 1.8): ?>
+                                                            <li class="divider"></li>
+                                                            <li class="dropdown-header" style="color: #d9534f; font-weight: bold; font-size: 0.85em; text-transform: uppercase; padding: 5px 20px 2px 20px;">
+                                                              <i class="fa fa-exclamation-triangle"></i> Danger Zone
+                                                            </li>
+                                                            <li>
+                                                              <a href="/init.php" style="color: #d9534f !important;">
+                                                                <i class="fa fa-refresh"></i> Re-Initialize NEMS
+                                                              </a>
+                                                            </li>
+                                                          <?php endif; ?>
 							</ul>
 						</li>
 
@@ -135,14 +146,14 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
 							<ul class="dropdown-menu">
 
                                                           <li><h4 style="padding: 0 0 4px 4px; margin-bottom: 0;">Modern</h4></li>
-							  <?php if (nems_has_role('viewer') && ver('nems') >= 1.4) echo '<li><a href="/adagios/" target="_blank">Adagios</a></li>'; ?>
+							  <?php if (nems_has_role('operator')) echo '<li><a href="/adagios/" target="_blank">Adagios</a></li>'; ?>
 							  <?php if (ver('nems') >= 1.4) echo '<li><a href="/mobile/" target="_blank">Mobile UI</a></li>'; ?>
 							  <?php if (ver('nems') >= 1.4) echo '<li><a href="/tv/" target="_blank">TV Dashboard</a></li>'; ?>
 							  <?php if (ver('nems') >= 1.6 || file_exists('/var/www/nagiostv')) echo '<li><a href="/nagiostv/" target="_blank">Tactical Overview</a></li>'; ?>
 							  <?php
-  $cloudauth = intval(shell_exec('/usr/local/bin/nems-info cloudauthcache'));
-  if ($cloudauth == 1) echo '<li><a href="/cloud/" target="_blank">NEMS Cloud Services Dashboard</a></li>';
-?>
+                                                            $cloudauth = intval(shell_exec('/usr/local/bin/nems-info cloudauthcache'));
+                                                            if ($cloudauth == 1) echo '<li><a href="/cloud/" target="_blank">NEMS Cloud Services Dashboard</a></li>';
+                                                          ?>
 
                                                           <li><h4 style="padding: 0 0 4px 4px; margin: 0;">Legacy</h4></li>
 							  <?php

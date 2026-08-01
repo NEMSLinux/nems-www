@@ -57,3 +57,7 @@ fi
   chmod 440 /etc/sudoers.d/nems-userctl
 
 /bin/systemctl restart apache2
+
+# Ensure www-data can write to userfiles
+chown -R www-data:www-data /var/www/html/userfiles
+chmod -R 775 /var/www/html/userfiles
