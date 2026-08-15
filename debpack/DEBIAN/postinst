@@ -22,14 +22,14 @@ a2enconf security
 /bin/sed -i~ '/SecServerSignature/d' /etc/apache2/conf-available/security.conf
 echo "SecServerSignature NEMS_Linux/$ver" >> /etc/apache2/conf-available/security.conf
 
-# Increase upload size for background images
-  if [[ -e /etc/php/*/phpdbg/php.ini ]]; then
-    /bin/sed -i '/post_max_size =/c\; NEMS00001\npost_max_size = 20M' /etc/php/*/phpdbg/php.ini
-    /bin/sed -i '/upload_max_filesize =/c\upload_max_filesize = 16M' /etc/php/*/phpdbg/php.ini
-  fi
-  if [[ -e /etc/php/*/phpdbg/php.ini ]]; then
-    /bin/sed -i '/post_max_size =/c\; NEMS00001\npost_max_size = 20M' /etc/php/*/phpdbg/php.ini
-    /bin/sed -i '/upload_max_filesize =/c\upload_max_filesize = 16M' /etc/php/*/phpdbg/php.ini
+# Modify php.ini values
+  if [[ -e /etc/php/*/apache2/php.ini ]]; then
+    # Increase upload size for background images
+    /bin/sed -i -E '/NEMS00001/d; s/^\s*;?\s*post_max_size\s*=.*/; NEMS00001\npost_max_size = 20M/' /etc/php/*/apache2/php.ini
+    /bin/sed -i -E 's/^\s*;?\s*upload_max_filesize\s*=.*/upload_max_filesize = 16M/' /etc/php/*/apache2/php.ini
+
+    # Increase the memory limit for NEMS Tactical Overview history, etc.
+    /bin/sed -i -E 's/^\s*;?\s*memory_limit\s*=.*/memory_limit = 512M/' /etc/php/*/apache2/php.ini
   fi
 
 # Harden the folder against code being added by non-sudo user

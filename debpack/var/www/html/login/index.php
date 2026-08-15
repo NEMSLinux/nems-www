@@ -55,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+$force_top = 1; // force this page to break out of any frames
 include('/var/www/html/inc/header.php');
 ?>
 <div class="container" style="margin-top: 100px; padding-bottom: 100px;">

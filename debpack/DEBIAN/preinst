@@ -28,6 +28,3 @@ if [[ -e /sbin/shutdown ]]; then
     echo 'www-data ALL=NOPASSWD: /sbin/shutdown' | sudo EDITOR='tee -a' visudo
   fi
 fi
-
-# Generating new Snakeoil cert
-/usr/sbin/make-ssl-cert generate-default-snakeoil --force-overwrite

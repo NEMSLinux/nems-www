@@ -8,6 +8,11 @@
 <!--[if !IE]><!--> <html lang="en"> <!--<![endif]-->
 <head>
   <?php
+    // break out of frames
+    if (isset($force_top)) {
+      echo '  <script>if (window.top !== window.self) { window.top.location.href = window.location.href; }</script>' . PHP_EOL;
+    }
+
     $nemsalias = trim(shell_exec('/usr/local/bin/nems-info alias'));
     echo '  <title>';
     echo $whitelabel->name;
@@ -145,9 +150,9 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
 							</a>
 							<ul class="dropdown-menu">
 
-                                                          <li><h4 style="padding: 0 0 4px 4px; margin-bottom: 0;">Modern</h4></li>
+                                                          <?php if (nems_has_role('reporter')) echo '<li><h4 style="padding: 0 0 4px 4px; margin-bottom: 0;">Modern</h4></li>'; ?>
 							  <?php if (nems_has_role('operator')) echo '<li><a href="/adagios/" target="_blank">Adagios</a></li>'; ?>
-							  <?php if (ver('nems') >= 1.4) echo '<li><a href="/mobile/" target="_blank">Mobile UI</a></li>'; ?>
+							  <?php if (nems_has_role('operator')) echo '<li><a href="/mobile/" target="_blank">Mobile UI</a></li>'; ?>
 							  <?php if (ver('nems') >= 1.4) echo '<li><a href="/tv/" target="_blank">TV Dashboard</a></li>'; ?>
 							  <?php if (ver('nems') >= 1.6 || file_exists('/var/www/nagiostv')) echo '<li><a href="/nagiostv/" target="_blank">Tactical Overview</a></li>'; ?>
 							  <?php
@@ -155,11 +160,9 @@ The data-spy and data-target are part of the built-in Bootstrap scrollspy functi
                                                             if ($cloudauth == 1) echo '<li><a href="/cloud/" target="_blank">NEMS Cloud Services Dashboard</a></li>';
                                                           ?>
 
-                                                          <li><h4 style="padding: 0 0 4px 4px; margin: 0;">Legacy</h4></li>
-
+                                                          <?php if (nems_has_role('reporter')) echo '<li><h4 style="padding: 0 0 4px 4px; margin: 0;">Legacy</h4></li>'; ?>
 							  <?php if (nems_has_role('operator')) echo '<li><a href="/nagios/" target="_blank">Nagios Core</a></li>'; ?>
 							  <?php if (nems_has_role('operator')) echo '<li><a href="/pnp4nagios/" target="_blank">PNP4Nagios Graphs</a></li>'; ?>
-
 							  <?php if (nems_has_role('reporter')) echo '<li><a href="/nagvis/" target="_blank">NagVis</a></li>'; ?>
 							</ul>
 						</li>
