@@ -1,6 +1,16 @@
 <?php
   $functions_loaded=1;
 
+  // Load the user's timezone as set during nems-init
+  if (is_link('/etc/localtime')) {
+    $tzPath = readlink('/etc/localtime');
+    $pos = strpos($tzPath, 'zoneinfo/');
+    if ($pos !== false) {
+        $timezone = substr($tzPath, $pos + 9);
+        date_default_timezone_set($timezone);
+    }
+  }
+
   $alias = trim(shell_exec('/usr/local/bin/nems-info alias'));
 
   // Whitelabel
@@ -298,30 +308,34 @@
 
   function loadMonitorix($dmy) {
     $result = array();
-    switch (strtolower($dmy)) {
-      case 'd';
-        $which = 'day';
-        break;
-      case 'w';
-        $which = 'week';
-        break;
-      case 'm';
-        $which = 'month';
-        break;
-      case 'y';
-        $which = 'year';
-        break;
+
+    $map = [
+      'd' => 'day',
+      'w' => 'week',
+      'm' => 'month',
+      'y' => 'year',
+    ];
+
+    $key = strtolower($dmy);
+    if (!isset($map[$key])) {
+      return $result;
     }
-    if (file_exists('/var/www/html/monitorix/img/system1z.1year.png')) { // wait until the files are created
-      if ($handle = opendir('/var/www/html/monitorix/img/')) {
+
+    $which = $map[$key];
+    $path = '/var/www/html/monitorix/img/';
+
+    // Check for the specific period's primary image file
+    if (file_exists($path . 'system1z.1' . $which . '.png')) {
+      if ($handle = opendir($path)) {
         while (false !== ($entry = readdir($handle))) {
-            if ( $entry != "." && $entry != ".." && strstr($entry,'z.1' . $which) ) {
-              $result[] = $entry;
-            }
+          if ($entry != "." && $entry != ".." && strpos($entry, 'z.1' . $which) !== false) {
+            $result[] = $entry;
+          }
         }
         closedir($handle);
       }
     }
+
     return $result;
   }
 
