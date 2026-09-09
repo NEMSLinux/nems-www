@@ -157,6 +157,11 @@ class LiveStatusClient
         $this->runCommand($cmd);
     }
 
+    public function scheduleCheck($args) {
+        $cmd = new ScheduleCheckCommand($args);
+        $this->runCommand($cmd);
+    }
+
 }
 
 class LiveStatusQuery
@@ -434,6 +439,35 @@ class EnableNotificationsCommand extends LiveStatusCommand
         } elseif (!$this->args['service']) {
             unset($this->args['service']);
             $this->action = 'ENABLE_HOST_NOTIFICATIONS';
+        }
+    }
+}
+
+class ScheduleCheckCommand extends LiveStatusCommand
+{
+    function __construct($args=[])
+    {
+        parent::__construct($args);
+        $this->action = 'SCHEDULE_FORCED_SVC_CHECK';
+        $this->required = ['host'];
+        $this->fields = [
+            'host'       => '',
+            'service'    => '',
+            'check_time' => 0,
+        ];
+    }
+
+    function _processArgs()
+    {
+        parent::_processArgs();
+
+        if (empty($this->args['check_time'])) {
+            $this->args['check_time'] = time();
+        }
+
+        if (empty($this->args['service'])) {
+            unset($this->args['service']);
+            $this->action = 'SCHEDULE_FORCED_HOST_CHECK';
         }
     }
 }

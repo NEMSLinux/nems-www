@@ -14,7 +14,7 @@ a2enmod rewrite
 # For NEMS ULA SSO
 a2enmod lua
 a2enmod headers
-a2enconf nems_sso
+a2enconf nems-sso.conf
 
 # Change Apache footer
 a2enmod security2
