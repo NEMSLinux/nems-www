@@ -10,6 +10,7 @@ $request_method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
  */
 function is_local_ip(?string $ip): bool {
     if (!$ip) return false;
+    if ($ip === '::1' || $ip === '::ffff:127.0.0.1') return true;
     $ip_long = ip2long($ip);
     if ($ip_long === false) return false;
 
@@ -52,6 +53,24 @@ $response = ['success' => true];
 
 try {
     switch ($action) {
+
+        // Route NEMS AI endpoint query if package file is present
+        // This is separate because nems-ai is not installed by default
+        // and only gets installed if a user specifically requests to do so
+        case 'nems-ai':
+            $ai_file = '/usr/local/share/nems/nems-ai/api.php';
+            if (!file_exists($ai_file)) {
+                echo json_encode([
+                    'success' => false,
+                    'content' => [
+                        'ai_installed' => false,
+                        'message' => 'NEMS AI package is not installed'
+                    ]
+                ]);
+                exit();
+            }
+            require_once $ai_file;
+            exit();
 
         // GET /nems-api/state (Returns full host & service state tree)
         case 'state':
@@ -101,7 +120,7 @@ try {
             $response['content'] = 'Notifications disabled successfully';
             break;
 
-        // GET /nems-api/<table_name> (Direct MK Livestatus queries: hosts, services, hoststatus, etc.)
+        // GET /nems-api/<table_name> (Direct MK Livestatus queries)
         default:
             if ($request_method !== 'GET') {
                 http_response_code(405);

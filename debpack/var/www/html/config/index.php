@@ -209,6 +209,17 @@ if (is_array($nemsconf) && isset($_POST) && count($_POST) > 0) { // Overwrite th
 
         $nemsconf['php_agent_key'] = sanitize($_POST['php_agent_key']);
 
+        $new_kiosk_mode = intval($_POST['kiosk']) ?: 0;
+        if ($new_kiosk_mode != intval($nemsconf['kiosk'])) $kiosk_changed = 1; else $kiosk_changed = 0;
+        $nemsconf['kiosk'] = $new_kiosk_mode;
+        if ($kiosk_changed == 1) {
+          if ($new_kiosk_mode == 0) { // selected TTY
+            shell_exec('sudo /usr/local/bin/nems-hdmi-output tty');
+          } else { // selected one of the Kiosk modes (will be auto-loaded from config by nems-kiosk.sh)
+            shell_exec('sudo /usr/local/bin/nems-hdmi-output kiosk');
+          }
+        }
+
         $nemsconfoutput = '';
         foreach ($nemsconf as $key=>$value) {
                 $nemsconfoutput .= $key . '=' . $value . PHP_EOL;
@@ -878,6 +889,39 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
 
     <div class="col-md-12">
 
+          <header>Server Configuration</header>
+          <fieldset>
+
+                <section>
+                  <label class="label">Console Mode</label>
+                  <label class="select">
+                    <select name="kiosk">
+                      <option value="0"<?php if (!isset($nemsconf['kiosk']) || $nemsconf['kiosk'] == 0) echo ' SELECTED'; ?>>Text-Based Lightweight Boot Screen (Default)</option>
+                      <?php if (file_exists('/usr/local/bin/nems-hdmi-output')) { ?>
+                        <option value="1"<?php if ($nemsconf['kiosk'] == 1) echo ' SELECTED'; ?>>NEMS Central Command</option>
+                        <option value="2"<?php if ($nemsconf['kiosk'] == 2) echo ' SELECTED'; ?>>NEMS Tactical Overview</option>
+                        <option value="3"<?php if ($nemsconf['kiosk'] == 3) echo ' SELECTED'; ?>>NEMS TV Dashboard</option>
+                      <?php } ?>
+                    </select>
+                    <i></i>
+                  </label>
+                </section>
+
+                <section>
+                  <label class="label">Preferred Clock Format</label>
+                  <label class="select">
+                    <select name="tv_24h">
+                      <option value="3"<?php if (!isset($nemsconf['tv_24h']) || $nemsconf['tv_24h'] == 3) echo ' SELECTED'; ?>>3:25</option>
+                      <option value="2"<?php if ($nemsconf['tv_24h'] == 2) echo ' SELECTED'; ?>>3:25 PM</option>
+                      <option value="1"<?php if ($nemsconf['tv_24h'] == 1) echo ' SELECTED'; ?>>15:25</option>
+                    </select>
+                    <i></i>
+                  </label>
+                </section>
+
+          </fieldset>
+
+
           <header>NEMS TV Dashboard Configuration</header>
           <fieldset>
 
@@ -897,20 +941,7 @@ $cloudauth = shell_exec('/usr/local/bin/nems-info cloudauth');
                   </label>
                 </section>
 
-                <section>
-                  <label class="label">Clock Format</label>
-                  <label class="select">
-                    <select name="tv_24h">
-                      <option value="3"<?php if (!isset($nemsconf['tv_24h']) || $nemsconf['tv_24h'] == 3) echo ' SELECTED'; ?>>3:25</option>
-                      <option value="2"<?php if ($nemsconf['tv_24h'] == 2) echo ' SELECTED'; ?>>3:25 PM</option>
-                      <option value="1"<?php if ($nemsconf['tv_24h'] == 1) echo ' SELECTED'; ?>>15:25</option>
-                    </select>
-                    <i></i>
-                  </label>
-                </section>
-
           </fieldset>
-
 
 </div>
 
