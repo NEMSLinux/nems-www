@@ -1099,26 +1099,88 @@ if (file_exists($phonetics_file)) {
       }
     }
 
-    async function dispatchSpeechEvent(eventType, baselineText, checkData = {}) {
-      let speechText = baselineText;
-      let displayText = baselineText;
+    // --- SMART AI QUEUE & FLAPPING ENGINE ---
+    window.aiTaskQueue = [];
+    window.isAiWorkerActive = false;
+
+    function queueAiTask(task) {
+      // Flapping Check: If a DOWN event is in queue and RECOVERY arrives for same host, merge them
+      if (task.eventType === 'recovery') {
+        const downIdx = window.aiTaskQueue.findIndex(t => 
+          t.checkData && t.checkData.host_name === task.checkData.host_name && t.eventType === 'incident'
+        );
+
+        if (downIdx !== -1) {
+          const matchedHost = task.checkData.host_alias || task.checkData.host_name;
+          console.log(`%c[NEMS AI] Flapping Detected for ${matchedHost}. Merging requests.`, 'color: #ffaa00; font-weight: bold;');
+          
+          window.aiTaskQueue[downIdx] = {
+            eventType: 'flapping',
+            host: matchedHost,
+            baselineText: `Server ${matchedHost} went down but recovered almost immediately.`,
+            checkData: task.checkData
+          };
+          processAiTaskQueue();
+          return;
+        }
+      }
+
+      window.aiTaskQueue.push(task);
+      processAiTaskQueue();
+    }
+
+    async function processAiTaskQueue() {
+      if (window.isAiWorkerActive || window.aiTaskQueue.length === 0) return;
+
+      window.isAiWorkerActive = true;
+      const currentTask = window.aiTaskQueue.shift();
+
+      let speechText = currentTask.baselineText;
+      let displayText = currentTask.baselineText;
       let isAiEngine = false;
-      const stateClass = eventType === 'recovery' ? 'ok' : getStateClass(checkData.state);
-      const senderTag = eventType === 'incident' ? '[ALERT TRANSMISSION]' : '[RECOVERY TRANSMISSION]';
+      const stateClass = currentTask.eventType === 'recovery' ? 'ok' : getStateClass(currentTask.checkData ? currentTask.checkData.state : 2);
+      const senderTag = currentTask.eventType === 'incident' ? '[ALERT TRANSMISSION]' : '[RECOVERY TRANSMISSION]';
 
       if (!isInitialLoad) {
-        const soundType = (currentOverallSla < 75 && eventType === 'incident') ? 'klaxon' : (eventType === 'incident' ? 'alert' : 'recovery');
+        const soundType = (currentOverallSla < 75 && currentTask.eventType === 'incident') ? 'klaxon' : (currentTask.eventType === 'incident' ? 'alert' : 'recovery');
         playTacticalSound(soundType);
       }
 
-      const payload = { event_type: eventType, baseline_text: baselineText, timestamp: Math.floor(Date.now() / 1000), check_data: checkData };
-      console.log(`%c[NEMS AI] Outbound Request (${eventType})`, 'color: #00f0ff; font-weight: bold;', payload);
+      const payload = {
+        event_type: currentTask.eventType,
+        baseline_text: currentTask.baselineText,
+        host: currentTask.host || '',
+        incidents: currentTask.incidents || [],
+        recoveries: currentTask.recoveries || [],
+        timestamp: Math.floor(Date.now() / 1000),
+        check_data: currentTask.checkData || {}
+      };
+
+      console.log(`%c[NEMS AI] Outbound Request (${currentTask.eventType})`, 'color: #00f0ff; font-weight: bold;', payload);
 
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 45000);
-        const res = await fetch('/nems-api/nems-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal, body: JSON.stringify(payload) }).then(r => r.json());
+        const timeoutId = setTimeout(() => controller.abort(), 45000); // Full 45s window per attempt
+
+        const res = await fetch('/nems-api/nems-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify(payload)
+        }).then(r => r.json());
+
         clearTimeout(timeoutId);
+
+        if (res && res.status === 'busy') {
+          console.log(`%c[NEMS AI] Engine Busy. Holding request in queue for retry...`, 'color: #ffaa00; font-weight: bold;');
+          
+          window.aiTaskQueue.unshift(currentTask);
+          window.isAiWorkerActive = false;
+          
+          setTimeout(processAiTaskQueue, 2500);
+          return;
+        }
+
         console.log(`%c[NEMS AI] Synthesis Response`, 'color: #00ff88; font-weight: bold;', res);
 
         if (res && res.success && res.ai_active && res.speech_text) {
@@ -1131,19 +1193,18 @@ if (file_exists($phonetics_file)) {
       }
 
       enqueueSpeech(displayText, speechText, isAiEngine, stateClass, senderTag);
+
+      window.isAiWorkerActive = false;
+      setTimeout(processAiTaskQueue, 500);
     }
 
-    async function dispatchBatchIncidents(newIncidents, totalDownHosts) {
+    // --- REFACTORED DISPATCHERS TO USE QUEUE ENGINE ---
+    function dispatchSpeechEvent(eventType, baselineText, checkData = {}) {
+      queueAiTask({ eventType, baselineText, checkData });
+    }
+
+    function dispatchBatchIncidents(newIncidents, totalDownHosts) {
       if (!newIncidents || newIncidents.length === 0) return;
-
-      if (!isInitialLoad) {
-        const soundType = currentOverallSla < 75 ? 'klaxon' : 'alert';
-        playTacticalSound(soundType);
-      }
-
-      let primaryStateClass = 'unk';
-      if (newIncidents.some(i => i.stateCode === 2)) primaryStateClass = 'crit';
-      else if (newIncidents.some(i => i.stateCode === 1)) primaryStateClass = 'warn';
 
       if (newIncidents.length === 1) {
         const inc = newIncidents[0];
@@ -1156,36 +1217,16 @@ if (file_exists($phonetics_file)) {
       const downCount = newIncidents.filter(i => i.checkName === 'HOST DOWN').length;
       const newlyHostStr = downCount === 1 ? 'host' : 'hosts';
       const totalHostStr = totalDownHosts === 1 ? 'host is' : 'hosts are';
-      
+
       const baselineText = downCount > 0 
         ? `Tactical alert: ${downCount} newly offline ${newlyHostStr} detected. A total of ${totalDownHosts} ${totalHostStr} currently offline.`
         : `${newIncidents.length} active incident${newIncidents.length === 1 ? '' : 's'} detected across monitored nodes.`;
 
-      const payload = { event_type: 'batch_incidents', baseline_text: baselineText, incidents: newIncidents.slice(0, 5) };
-      console.log(`%c[NEMS AI] Outbound Request (Batch Incidents)`, 'color: #ffaa00; font-weight: bold;', payload);
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 45000);
-        const res = await fetch('/nems-api/nems-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal, body: JSON.stringify(payload) }).then(r => r.json());
-        clearTimeout(timeoutId);
-        console.log(`%c[NEMS AI] Synthesis Response`, 'color: #00ff88; font-weight: bold;', res);
-
-        if (res && res.success && res.ai_active && res.speech_text) {
-          enqueueSpeech(res.display_text, res.speech_text, true, primaryStateClass, '[ALERT TRANSMISSION]');
-          return;
-        }
-      } catch (e) {
-        console.log(`%c[NEMS AI] Request Timed Out / Failed`, 'color: #ff0055; font-weight: bold;', e);
-      }
-
-      enqueueSpeech(baselineText, baselineText, false, primaryStateClass, '[ALERT TRANSMISSION]');
+      queueAiTask({ eventType: 'batch_incidents', baselineText, incidents: newIncidents.slice(0, 5) });
     }
 
-    async function dispatchBatchRecoveries(newRecoveries) {
+    function dispatchBatchRecoveries(newRecoveries) {
       if (!newRecoveries || newRecoveries.length === 0) return;
-
-      if (!isInitialLoad) playTacticalSound('recovery');
 
       if (newRecoveries.length === 1) {
         const item = newRecoveries[0];
@@ -1199,25 +1240,7 @@ if (file_exists($phonetics_file)) {
       const hostListStr = Array.from(hostsAffected).slice(0, 3).join(', ') + (hostsAffected.size > 3 ? ' and others' : '');
       const baselineText = `${newRecoveries.length} services have recovered on ${hostListStr}.`;
 
-      const payload = { event_type: 'batch_recoveries', baseline_text: baselineText, recoveries: newRecoveries.slice(0, 5) };
-      console.log(`%c[NEMS AI] Outbound Request (Batch Recoveries)`, 'color: #00f0ff; font-weight: bold;', payload);
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 45000);
-        const res = await fetch('/nems-api/nems-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal, body: JSON.stringify(payload) }).then(r => r.json());
-        clearTimeout(timeoutId);
-        console.log(`%c[NEMS AI] Synthesis Response`, 'color: #00ff88; font-weight: bold;', res);
-
-        if (res && res.success && res.ai_active && res.speech_text) {
-          enqueueSpeech(res.display_text, res.speech_text, true, 'ok', '[RECOVERY TRANSMISSION]');
-          return;
-        }
-      } catch (e) {
-        console.log(`%c[NEMS AI] Request Timed Out / Failed`, 'color: #ff0055; font-weight: bold;', e);
-      }
-
-      enqueueSpeech(baselineText, baselineText, false, 'ok', '[RECOVERY TRANSMISSION]');
+      queueAiTask({ eventType: 'batch_recoveries', baselineText, recoveries: newRecoveries.slice(0, 5) });
     }
 
     function announceWelcomeOverview(hosts, services, incidents, overallSla) {
@@ -1333,7 +1356,7 @@ if (file_exists($phonetics_file)) {
         hostData.lastSlot = currentSlot;
       }
 
-      // Any non-zero state code (Warning, Critical, Unknown) marks the current slot (far right) as BAD (Red)
+      // Any non-zero state code (Warning, Critical, Unknown) marks current slot (far right) as BAD (Red)
       if (currentStateCode !== 0) {
         hostData.segments[SEGMENT_COUNT - 1] = 'seg-crit';
       }

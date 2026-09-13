@@ -46,36 +46,41 @@ $raw_body = file_get_contents('php://input');
 $json_body = json_decode($raw_body, true) ?? [];
 $args = array_merge($_GET, $json_body);
 
-$client = new LiveStatusClient('/usr/local/nagios/var/rw/live.sock');
-$client->pretty_print = true;
-
 $response = ['success' => true];
 
 try {
-    switch ($action) {
-
-        // Route NEMS AI endpoint query if package file is present
-        // This is separate because nems-ai is not installed by default
-        // and only gets installed if a user specifically requests to do so
-        case 'nems-ai':
-            $ai_file = '/usr/local/share/nems/nems-ai/api.php';
-            if (!file_exists($ai_file)) {
-                echo json_encode([
-                    'success' => false,
-                    'content' => [
-                        'ai_installed' => false,
-                        'message' => 'NEMS AI package is not installed'
-                    ]
-                ]);
-                exit();
-            }
-            require_once $ai_file;
+    // 1. Route NEMS AI endpoint without requiring Nagios Livestatus socket
+    if ($action === 'nems-ai') {
+        $ai_file = '/usr/local/share/nems/nems-ai/api.php';
+        if (!file_exists($ai_file)) {
+            echo json_encode([
+                'success' => false,
+                'content' => [
+                    'ai_installed' => false,
+                    'message' => 'NEMS AI package is not installed'
+                ]
+            ]);
             exit();
+        }
+        require_once $ai_file;
+        exit();
+    }
+
+    // 2. Pre-check socket file availability to prevent socket exception crashes
+    $socket_path = '/usr/local/nagios/var/rw/live.sock';
+    if (!file_exists($socket_path) && !file_exists('/usr/local/nagios/var/rw/live')) {
+        throw new LiveStatusException("Nagios Livestatus socket is unreachable or reloading.", 503);
+    }
+
+    // 3. Instantiate client inside try block so socket connection failures are caught
+    $client = new LiveStatusClient($socket_path);
+    $client->pretty_print = true;
+
+    switch ($action) {
 
         // GET /nems-api/state (Returns full host & service state tree)
         case 'state':
             if ($request_method !== 'GET') {
-                http_response_code(405);
                 throw new LiveStatusException("Method Not Allowed. Use GET for /state.", 405);
             }
             $response['content'] = [
@@ -123,7 +128,6 @@ try {
         // GET /nems-api/<table_name> (Direct MK Livestatus queries)
         default:
             if ($request_method !== 'GET') {
-                http_response_code(405);
                 throw new LiveStatusException("Method Not Allowed for query endpoint '$action'. Use GET.", 405);
             }
             $response['content'] = $client->getQuery($action, $_GET);
@@ -131,20 +135,20 @@ try {
     }
 
 } catch (LiveStatusException $e) {
+    // Return structured success: false with HTTP 200 so JS frontend handles it gracefully
+    header('Content-Type: application/json', true, 200);
     $response['success'] = false;
     $response['content'] = [
         'code'    => $e->getCode(),
         'message' => $e->getMessage()
     ];
-    $status_code = is_numeric($e->getCode()) && $e->getCode() >= 400 && $e->getCode() < 600 ? (int)$e->getCode() : 500;
-    http_response_code($status_code);
 } catch (Exception $e) {
+    header('Content-Type: application/json', true, 200);
     $response['success'] = false;
     $response['content'] = [
         'code'    => 500,
-        'message' => $e->getMessage()
+        'message' => 'Livestatus socket communication error: ' . $e->getMessage()
     ];
-    http_response_code(500);
 }
 
 echo json_encode($response);
