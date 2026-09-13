@@ -1,4 +1,13 @@
 <?php
+// INTERNAL API INTERCEPTOR FOR REAL-TIME NEMS SERVER CPU LOAD
+if (isset($_GET['getload'])) {
+    header('Content-Type: application/json');
+    $cores = (int)shell_exec('nproc');
+    if ($cores < 1) $cores = 1;
+    echo json_encode(['load' => sys_getloadavg(), 'cores' => $cores]);
+    exit;
+}
+
 // Load tv_24h setting directly from nems.conf
 $tv_24h = 3;
 $conf_file = '/usr/local/share/nems/nems.conf';
@@ -33,18 +42,21 @@ if (file_exists($phonetics_file)) {
   <style>
     :root {
       --bg: #050811;
-      --panel-bg: rgba(10, 16, 28, 0.65);
-      --border: rgba(0, 240, 255, 0.25);
-      --cyan: #00f0ff;
+      --panel-bg: rgba(10, 16, 28, 0.45);
+      --static-cyan: #00f0ff;
       --green: #00ff88;
       --warn: #ffaa00;
       --crit: #ff0055;
       --unknown: #a855f7;
       --font: 'Segoe UI', Roboto, sans-serif;
+
+      /* DYNAMIC THEME VARIABLES */
+      --theme-color: #00f0ff;
+      --theme-border: rgba(0, 240, 255, 0.25);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    
+
     html, body {
       width: 100vw;
       height: 100vh;
@@ -58,6 +70,16 @@ if (file_exists($phonetics_file)) {
       display: flex;
       flex-direction: column;
       transition: cursor 0.2s ease;
+    }
+
+    /* THEME OVERRIDES TRIGGERED BY JS */
+    body.is-warn {
+      --theme-color: #ffaa00;
+      --theme-border: rgba(255, 170, 0, 0.35);
+    }
+    body.is-crit {
+      --theme-color: #ff0055;
+      --theme-border: rgba(255, 0, 85, 0.45);
     }
 
     /* BACKGROUND CANVAS FOR SUBTLE ELECTRIFIED GRID */
@@ -100,11 +122,19 @@ if (file_exists($phonetics_file)) {
       justify-content: space-between;
       align-items: center;
       padding: 0 20px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--theme-border);
       background: linear-gradient(180deg, rgba(0,240,255,0.12) 0%, transparent 100%);
+      transition: border-color 0.8s ease;
     }
-    .title-box h1 { font-size: 1.35rem; letter-spacing: 3px; color: var(--cyan); text-shadow: 0 0 12px var(--cyan); }
+    .title-box h1 { 
+      font-size: 1.35rem; 
+      letter-spacing: 3px; 
+      color: var(--theme-color); 
+      text-shadow: 0 0 12px var(--theme-color); 
+      transition: color 0.8s ease, text-shadow 0.8s ease; 
+    }
     .title-box span { font-size: 0.65rem; color: #8a9bb0; letter-spacing: 1.5px; }
+    #clock { transition: color 0.8s ease; }
 
     .grid {
       flex: 1;
@@ -119,7 +149,7 @@ if (file_exists($phonetics_file)) {
 
     .panel {
       background: var(--panel-bg);
-      border: 1px solid var(--border);
+      border: 1px solid var(--theme-border);
       border-radius: 4px;
       padding: 12px;
       display: flex;
@@ -127,7 +157,8 @@ if (file_exists($phonetics_file)) {
       clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
       box-shadow: inset 0 0 15px rgba(0,240,255,0.03);
       min-height: 0;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(2px);
+      transition: border-color 0.8s ease;
     }
 
     .left-module { margin-bottom: 10px; flex-shrink: 0; }
@@ -142,14 +173,15 @@ if (file_exists($phonetics_file)) {
     .panel h2 {
       font-size: 0.78rem;
       letter-spacing: 2px;
-      color: var(--cyan);
+      color: var(--theme-color);
       text-transform: uppercase;
       margin-bottom: 6px;
-      border-bottom: 1px dashed var(--border);
+      border-bottom: 1px dashed var(--theme-border);
       padding-bottom: 4px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      transition: color 0.8s ease, border-color 0.8s ease;
     }
 
     .center-layout {
@@ -160,23 +192,41 @@ if (file_exists($phonetics_file)) {
       min-height: 0;
     }
 
+    /* SCI-FI HUD RADIAL GAUGES CONTAINER */
     .hud-gauges {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
       gap: 10px;
-      background: rgba(0, 240, 255, 0.03);
-      border: 1px solid var(--border);
-      padding: 8px;
+      background: rgba(0, 240, 255, 0.02);
+      border: 1px solid var(--theme-border);
+      padding: 6px 10px;
       border-radius: 4px;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(2px);
+      transition: border-color 0.8s ease;
     }
-    .gauge-box { text-align: center; }
-    .gauge-val { font-size: 1.6rem; font-weight: bold; color: var(--cyan); text-shadow: 0 0 10px var(--cyan); }
-    .gauge-lbl { font-size: 0.62rem; color: #8a9bb0; letter-spacing: 1px; margin-top: 2px; }
+    .gauge-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .gauge-canvas {
+      width: 78px;
+      height: 78px;
+    }
+    .gauge-lbl {
+      font-size: 0.58rem;
+      color: #8a9bb0;
+      letter-spacing: 1px;
+      margin-top: 2px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
 
     .matrix-container {
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid var(--theme-border);
       padding: 12px;
       overflow: hidden;
       border-radius: 4px;
@@ -184,21 +234,23 @@ if (file_exists($phonetics_file)) {
       flex-direction: column;
       min-height: 0;
       position: relative;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(2px);
+      transition: border-color 0.8s ease;
     }
 
     #page-indicator {
       position: absolute;
       top: 12px;
       right: 14px;
-      color: var(--cyan);
+      color: var(--theme-color);
       font-size: 0.72rem;
       font-weight: bold;
       letter-spacing: 1px;
       background: rgba(0, 240, 255, 0.1);
       padding: 2px 8px;
       border-radius: 3px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--theme-border);
+      transition: color 0.8s ease, border-color 0.8s ease;
     }
 
     .node-grid-wrapper {
@@ -224,24 +276,24 @@ if (file_exists($phonetics_file)) {
     }
 
     .node-card {
-      background: rgba(15, 23, 42, 0.60);
-      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.38);
+      border: 1px solid var(--theme-border);
       padding: 10px 12px;
       border-radius: 6px;
-      min-height: 100px;
+      min-height: 108px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       transition: border-color 0.3s ease, background 0.3s ease;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-      backdrop-filter: blur(4px);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      backdrop-filter: blur(2px);
     }
     .node-card.ok { border-color: rgba(0,255,136,0.4); box-shadow: inset 0 0 10px rgba(0,255,136,0.05); }
     .node-card.warn { border-color: var(--warn); background: rgba(255,170,0,0.15); }
     .node-card.crit { border-color: var(--crit); background: rgba(255,0,85,0.20); box-shadow: 0 0 15px rgba(255,0,85,0.3); }
     .node-card.unk { border-color: var(--unknown); background: rgba(168,85,247,0.15); }
 
-    .node-header { margin-bottom: 6px; }
+    .node-header { margin-bottom: 4px; }
     .node-name {
       font-size: 0.88rem;
       font-weight: 700;
@@ -266,29 +318,55 @@ if (file_exists($phonetics_file)) {
 
     .node-card-bottom {
       display: flex;
+      flex-direction: column;
+      gap: 4px;
+      border-top: 1px dashed rgba(0, 240, 255, 0.15);
+      padding-top: 6px;
+      margin-top: 4px;
+    }
+
+    .node-card-meta-row {
+      display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 0.68rem;
       color: #8a9bb0;
-      border-top: 1px dashed rgba(0, 240, 255, 0.15);
-      padding-top: 4px;
-      margin-top: 4px;
     }
 
+    /* HIGH-RESOLUTION 48-SEGMENT BINARY HISTORICAL STRIP (30-MIN BLOCKS) */
+    .history-bar-container {
+      display: flex;
+      gap: 1px;
+      height: 6px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 2px;
+      padding: 1px;
+    }
+    .history-bar-segment {
+      flex: 1;
+      height: 100%;
+      border-radius: 1px;
+      transition: background-color 0.3s ease;
+    }
+    .history-bar-segment.seg-ok { background-color: var(--green); box-shadow: 0 0 2px rgba(0,255,136,0.3); }
+    .history-bar-segment.seg-crit { background-color: var(--crit); box-shadow: 0 0 3px rgba(255,0,85,0.6); }
+
     .chart-box {
-      background: rgba(0, 0, 0, 0.30);
-      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.20);
+      border: 1px solid var(--theme-border);
       padding: 8px 10px 4px 10px;
       border-radius: 4px;
       display: flex;
       flex-direction: column;
       height: 100%;
       min-height: 0;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(2px);
+      transition: border-color 0.8s ease;
     }
 
     .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .card { background: rgba(255,255,255,0.03); border-left: 3px solid var(--cyan); padding: 6px; }
+    .card { background: rgba(255,255,255,0.03); border-left: 3px solid var(--theme-color); padding: 6px; transition: border-color 0.8s ease; }
     .card.ok { border-color: var(--green); }
     .card.warn { border-color: var(--warn); }
     .card.crit { border-color: var(--crit); }
@@ -297,8 +375,8 @@ if (file_exists($phonetics_file)) {
 
     .chat-container {
       flex: 1;
-      background: rgba(0, 0, 0, 0.30);
-      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid var(--theme-border);
       border-radius: 4px;
       padding: 8px;
       overflow-y: auto;
@@ -306,10 +384,12 @@ if (file_exists($phonetics_file)) {
       flex-direction: column;
       gap: 6px;
       min-height: 0;
+      backdrop-filter: blur(2px);
+      transition: border-color 0.8s ease;
     }
     .chat-item {
       background: rgba(0, 240, 255, 0.05);
-      border-left: 3px solid var(--cyan);
+      border-left: 3px solid var(--static-cyan);
       padding: 6px 8px;
       border-radius: 3px;
       font-size: 0.72rem;
@@ -319,8 +399,8 @@ if (file_exists($phonetics_file)) {
     .chat-item.ai { border-left-color: var(--green); background: rgba(0, 255, 136, 0.05); }
     .chat-item.alert, .chat-item.crit { border-left-color: var(--crit); background: rgba(255, 0, 85, 0.08); }
     .chat-item.warn { border-left-color: var(--warn); background: rgba(255, 170, 0, 0.08); }
-    .chat-item.unk { border-left-color: var(--unknown); background: rgba(168, 85, 247, 0.08); }
-    .chat-item.ok { border-left-color: var(--cyan); background: rgba(0, 240, 255, 0.05); }
+    .chat-item.unk { border-left-color: var(--unknown); background: rgba(168,85,247,0.08); }
+    .chat-item.ok { border-left-color: var(--static-cyan); background: rgba(0, 240, 255, 0.05); }
 
     .chat-meta {
       display: flex;
@@ -340,10 +420,11 @@ if (file_exists($phonetics_file)) {
     /* TELEMETRY METERS */
     .perf-widget {
       background: rgba(0,240,255,0.03);
-      border: 1px solid var(--border);
+      border: 1px solid var(--theme-border);
       padding: 6px;
       margin-top: 4px;
       border-radius: 3px;
+      transition: border-color 0.8s ease;
     }
     .perf-title { font-size: 0.6rem; color: #8a9bb0; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
 
@@ -356,9 +437,9 @@ if (file_exists($phonetics_file)) {
     }
     .meter-bar-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--cyan), var(--green));
+      background: linear-gradient(90deg, var(--static-cyan), var(--green));
       border-radius: 4px;
-      transition: width 0.5s ease;
+      transition: width 0.5s ease, background 0.5s ease;
     }
 
     .dual-meter-row {
@@ -379,7 +460,7 @@ if (file_exists($phonetics_file)) {
     }
     .incident-item.warn { background: rgba(255,170,0,0.08); border-color: rgba(255,170,0,0.3); }
     .incident-item.unk { background: rgba(168,85,247,0.08); border-color: rgba(168,85,247,0.3); }
-    
+
     .incident-top-line {
       display: flex;
       justify-content: space-between;
@@ -409,7 +490,7 @@ if (file_exists($phonetics_file)) {
     .incident-host {
       font-size: 0.75rem;
       font-weight: 600;
-      color: var(--cyan);
+      color: var(--static-cyan);
       margin-bottom: 4px;
       word-break: break-word;
     }
@@ -430,7 +511,7 @@ if (file_exists($phonetics_file)) {
   <!-- CONNECTION OVERLAY -->
   <div id="connection-lost-overlay">
     <div class="lost-title">⚡ LOST CONNECTION</div>
-    <div class="lost-sub">RECONNECTING TO NEMS SERVER...</div>
+    <div class="lost-sub">NEMS SERVER IS NOT RESPONDING - AWAITING CONNECTION...</div>
   </div>
 
   <!-- CELEBRATION FIREWORKS CANVAS -->
@@ -441,7 +522,7 @@ if (file_exists($phonetics_file)) {
       <h1>NEMS CENTRAL COMMAND</h1>
       <span>REAL-TIME ENTERPRISE INFRASTRUCTURE HEALTH</span>
     </div>
-    <div id="clock" style="font-size: 1rem; letter-spacing: 2px; color: var(--cyan);">--:--:--</div>
+    <div id="clock" style="font-size: 1rem; letter-spacing: 2px; color: var(--theme-color);">--:--:--</div>
   </header>
 
   <div class="grid">
@@ -480,17 +561,22 @@ if (file_exists($phonetics_file)) {
 
     <!-- Center Stage -->
     <div class="center-layout">
+      <!-- SCI-FI RADIAL HUD DIALS -->
       <div class="hud-gauges">
         <div class="gauge-box">
-          <div class="gauge-val" id="sla-val">100%</div>
+          <canvas id="gauge-overall" class="gauge-canvas" width="156" height="156"></canvas>
           <div class="gauge-lbl">OVERALL HEALTH</div>
         </div>
         <div class="gauge-box">
-          <div class="gauge-val" id="host-health" style="color: var(--green);">100%</div>
+          <canvas id="gauge-avg" class="gauge-canvas" width="156" height="156"></canvas>
+          <div class="gauge-lbl">24H AVERAGE HEALTH</div>
+        </div>
+        <div class="gauge-box">
+          <canvas id="gauge-host" class="gauge-canvas" width="156" height="156"></canvas>
           <div class="gauge-lbl">HOST HEALTH</div>
         </div>
         <div class="gauge-box">
-          <div class="gauge-val" id="svc-health" style="color: var(--warn);">100%</div>
+          <canvas id="gauge-svc" class="gauge-canvas" width="156" height="156"></canvas>
           <div class="gauge-lbl">SERVICE HEALTH</div>
         </div>
       </div>
@@ -504,7 +590,7 @@ if (file_exists($phonetics_file)) {
       </div>
 
       <div class="chart-box">
-        <h2 style="font-size:0.7rem; color:var(--cyan); margin-bottom:2px;">INFRASTRUCTURE HEALTH TIMELINE</h2>
+        <h2 style="font-size:0.7rem; color:var(--theme-color); margin-bottom:2px; transition: color 0.8s ease;">INFRASTRUCTURE HEALTH TIMELINE</h2>
         <div style="flex:1; position:relative; min-height:0; width:100%;">
           <canvas id="slaChart"></canvas>
         </div>
@@ -519,14 +605,185 @@ if (file_exists($phonetics_file)) {
   </div>
 
   <script>
-    // --- SUBTLE ELECTRIFIED GRID BACKGROUND ENGINE ---
+    // --- GLOBAL STATE ---
+    let currentOverallSla = 100;
+    let isInitialLoad = true;
+
+    // --- WEB AUDIO API SOUND ENGINE ---
+    function playTacticalSound(type = 'alert') {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        if (!window.audioCtx) window.audioCtx = new AudioCtx();
+        if (window.audioCtx.state === 'suspended') window.audioCtx.resume();
+
+        const osc = window.audioCtx.createOscillator();
+        const gain = window.audioCtx.createGain();
+        const now = window.audioCtx.currentTime;
+
+        if (type === 'klaxon') {
+          // Dual-Tone Square Wave for Critical Network Emergency (<75% Overall)
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(600, now);
+          osc.frequency.setValueAtTime(800, now + 0.25);
+          osc.frequency.setValueAtTime(600, now + 0.5);
+          osc.frequency.setValueAtTime(800, now + 0.75);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.linearRampToValueAtTime(0.0, now + 1.0);
+          osc.connect(gain);
+          gain.connect(window.audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 1.0);
+        } else if (type === 'alert') {
+          // "Pew" sound for normal service/host alerts
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, now);
+          osc.frequency.exponentialRampToValueAtTime(220, now + 0.2);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+          osc.connect(gain);
+          gain.connect(window.audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        } else if (type === 'recovery') {
+          // Gentle rising recovery chime
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(329.63, now);
+          osc.frequency.exponentialRampToValueAtTime(523.25, now + 0.3);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+          osc.connect(gain);
+          gain.connect(window.audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.32);
+        }
+      } catch(e) {}
+    }
+
+    // --- INTERACTIVE AUDIO TEST HARNESS MODE TRIGGER (`?testsound`) ---
+    if (window.location.search.includes('testsound')) {
+      const overlay = document.createElement('div');
+      overlay.innerHTML = '<h1 style="color:#00f0ff; font-family:sans-serif; text-align:center; padding:20px; background:rgba(0,0,0,0.8); border:1px solid #00f0ff; border-radius:8px;">CLICK TO START AUDIO TEST<br><span style="font-size:12px; color:#8a9bb0;">Allows browser to authorize Web Audio API</span></h1>';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.85);z-index:999999;display:flex;align-items:center;justify-content:center;cursor:pointer;';
+      document.body.appendChild(overlay);
+
+      overlay.onclick = () => {
+        overlay.remove();
+        if (window.audioCtx && window.audioCtx.state === 'suspended') window.audioCtx.resume();
+        
+        enqueueSpeech("Audio test sequence initiated. Triggering standard alert pew.", null, false, 'crit', '[TEST HARNESS]');
+        setTimeout(() => { playTacticalSound('alert'); }, 3000);
+        setTimeout(() => {
+          enqueueSpeech("Triggering emergency klaxon.", null, false, 'crit', '[TEST HARNESS]');
+          setTimeout(() => { playTacticalSound('klaxon'); }, 2000);
+        }, 8000);
+        setTimeout(() => {
+          enqueueSpeech("Triggering recovery chime.", null, false, 'ok', '[TEST HARNESS]');
+          setTimeout(() => { playTacticalSound('recovery'); }, 2000);
+        }, 16000);
+        setTimeout(() => {
+          window.celebrationPending = true;
+          enqueueSpeech("Triggering celebration sequence.", null, false, 'ok', '[TEST HARNESS]');
+        }, 24000);
+      };
+    }
+
+    // --- STANDARDIZED HEALTH THRESHOLD COLOR HELPER ---
+    function getHealthThresholdColor(val) {
+      if (val >= 90) return '#00f0ff'; // 90-100% = Aqua / Cyan
+      if (val >= 75) return '#ffaa00'; // 75-89% = Amber / Warning
+      return '#ff0055';                // <75% = Critical Red
+    }
+
+    // --- SCI-FI HUD RADIAL GAUGE RENDERER ---
+    function renderSciFiGauge(canvasId, value) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const radius = cx - 14;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const val = Math.max(0, Math.min(100, Math.round(value)));
+      const activeColor = getHealthThresholdColor(val);
+
+      const startAngle = 0.75 * Math.PI;
+      const totalArc = 1.5 * Math.PI;
+      const currentArc = startAngle + (val / 100) * totalArc;
+
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, startAngle, startAngle + totalArc);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius - 8, 0, 2 * Math.PI);
+      ctx.stroke();
+
+      ctx.save();
+      ctx.shadowColor = activeColor;
+      ctx.shadowBlur = 10;
+      ctx.strokeStyle = activeColor;
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, startAngle, currentArc);
+      ctx.stroke();
+      ctx.restore();
+
+      const numTicks = 12;
+      for (let i = 0; i <= numTicks; i++) {
+        const tickAngle = startAngle + (i / numTicks) * totalArc;
+        const x1 = cx + (radius - 12) * Math.cos(tickAngle);
+        const y1 = cy + (radius - 12) * Math.sin(tickAngle);
+        const x2 = cx + (radius - 15) * Math.cos(tickAngle);
+        const y2 = cy + (radius - 15) * Math.sin(tickAngle);
+
+        ctx.strokeStyle = (startAngle + (i / numTicks) * totalArc) <= currentArc 
+          ? activeColor 
+          : 'rgba(138, 155, 176, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 22px "Segoe UI", Roboto, sans-serif';
+      ctx.fillStyle = activeColor;
+      ctx.shadowColor = activeColor;
+      ctx.shadowBlur = 8;
+      ctx.fillText(`${val}%`, cx, cy);
+      ctx.shadowBlur = 0;
+    }
+
+    // --- MULTI-DIRECTIONAL ELECTRIFIED GRID & SMOOTH LERP ENGINE ---
     const bgCanvas = document.getElementById('bg-canvas');
     const bgCtx = bgCanvas.getContext('2d');
     let sparks = [];
+    let bursts = [];
     const GRID_SIZE = 45;
+    const MIN_SPEED = 3.8;
+    const MAX_SPEED = 7.5;
 
-    let currentGridLineColor = 'rgba(0, 240, 255, 0.09)';
-    let currentSparkRgb = '0, 240, 255';
+    let currentSystemState = 'ok';
+    let currentGridRgb = [0, 240, 255];
+    let targetGridRgb = [0, 240, 255];
+    let currentSparkRgb = [0, 240, 255];
+    let targetSparkRgb = [0, 240, 255];
+    let currentGridAlpha = 0.09;
+    let targetGridAlpha = 0.09;
+
+    function lerp(start, end, amt) { return start + (end - start) * amt; }
 
     function resizeBgCanvas() {
       bgCanvas.width = window.innerWidth;
@@ -536,46 +793,77 @@ if (file_exists($phonetics_file)) {
     resizeBgCanvas();
 
     function updateElectrifiedTheme(state) {
+      currentSystemState = state;
+      document.body.classList.remove('is-warn', 'is-crit');
+
       if (state === 'crit') {
-        currentGridLineColor = 'rgba(255, 0, 85, 0.12)';
-        currentSparkRgb = '255, 0, 85';
+        document.body.classList.add('is-crit');
+        targetGridRgb = [255, 0, 85];
+        targetSparkRgb = [255, 0, 85];
+        targetGridAlpha = 0.18;
       } else if (state === 'warn') {
-        currentGridLineColor = 'rgba(255, 170, 0, 0.12)';
-        currentSparkRgb = '255, 170, 0';
+        document.body.classList.add('is-warn');
+        targetGridRgb = [255, 170, 0];
+        targetSparkRgb = [255, 170, 0];
+        targetGridAlpha = 0.14;
       } else {
-        currentGridLineColor = 'rgba(0, 240, 255, 0.09)';
-        currentSparkRgb = '0, 240, 255';
+        targetGridRgb = [0, 240, 255];
+        targetSparkRgb = [0, 240, 255];
+        targetGridAlpha = 0.09;
       }
     }
 
     function spawnElectricSpark() {
       const isHorizontal = Math.random() > 0.5;
+      const isForward = Math.random() > 0.5;
+
       if (isHorizontal) {
-        const row = Math.floor(Math.random() * (bgCanvas.height / GRID_SIZE));
-        sparks.push({
-          x: -40,
-          y: row * GRID_SIZE,
-          length: 30 + Math.random() * 20,
-          speed: 5 + Math.random() * 4,
-          dir: 'h'
-        });
+        const numRows = Math.floor(bgCanvas.height / GRID_SIZE);
+        const activeRows = new Set(sparks.filter(s => s.dir.startsWith('h')).map(s => s.gridIndex));
+        const availableRows = [];
+        for (let r = 0; r < numRows; r++) if (!activeRows.has(r)) availableRows.push(r);
+        if (availableRows.length === 0) return;
+
+        const row = availableRows[Math.floor(Math.random() * availableRows.length)];
+        const speed = MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED);
+
+        if (isForward) sparks.push({ x: -40, y: row * GRID_SIZE, gridIndex: row, length: 30 + Math.random() * 25, speed: speed, dir: 'h+' });
+        else sparks.push({ x: bgCanvas.width + 40, y: row * GRID_SIZE, gridIndex: row, length: 30 + Math.random() * 25, speed: -speed, dir: 'h-' });
       } else {
-        const col = Math.floor(Math.random() * (bgCanvas.width / GRID_SIZE));
-        sparks.push({
-          x: col * GRID_SIZE,
-          y: -40,
-          length: 30 + Math.random() * 20,
-          speed: 5 + Math.random() * 4,
-          dir: 'v'
-        });
+        const numCols = Math.floor(bgCanvas.width / GRID_SIZE);
+        const activeCols = new Set(sparks.filter(s => s.dir.startsWith('v')).map(s => s.gridIndex));
+        const availableCols = [];
+        for (let c = 0; c < numCols; c++) if (!activeCols.has(c)) availableCols.push(c);
+        if (availableCols.length === 0) return;
+
+        const col = availableCols[Math.floor(Math.random() * availableCols.length)];
+        const speed = MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED);
+
+        if (isForward) sparks.push({ x: col * GRID_SIZE, y: -40, gridIndex: col, length: 30 + Math.random() * 25, speed: speed, dir: 'v+' });
+        else sparks.push({ x: col * GRID_SIZE, y: bgCanvas.height + 40, gridIndex: col, length: 30 + Math.random() * 25, speed: -speed, dir: 'v-' });
       }
     }
 
     function animateElectrifiedGrid() {
       bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
 
-      // 1. Static Clean Grid Lines
-      bgCtx.strokeStyle = currentGridLineColor;
+      currentGridRgb[0] = lerp(currentGridRgb[0], targetGridRgb[0], 0.04);
+      currentGridRgb[1] = lerp(currentGridRgb[1], targetGridRgb[1], 0.04);
+      currentGridRgb[2] = lerp(currentGridRgb[2], targetGridRgb[2], 0.04);
+
+      currentSparkRgb[0] = lerp(currentSparkRgb[0], targetSparkRgb[0], 0.04);
+      currentSparkRgb[1] = lerp(currentSparkRgb[1], targetSparkRgb[1], 0.04);
+      currentSparkRgb[2] = lerp(currentSparkRgb[2], targetSparkRgb[2], 0.04);
+
+      currentGridAlpha = lerp(currentGridAlpha, targetGridAlpha, 0.04);
+
+      let pulseAlpha = currentGridAlpha;
+      if (currentSystemState === 'crit') pulseAlpha += Math.sin(Date.now() / 320) * 0.06;
+
+      const gridColorStr = `rgba(${Math.round(currentGridRgb[0])}, ${Math.round(currentGridRgb[1])}, ${Math.round(currentGridRgb[2])}, ${Math.max(0.02, pulseAlpha).toFixed(3)})`;
+      const sparkColorStr = `${Math.round(currentSparkRgb[0])}, ${Math.round(currentSparkRgb[1])}, ${Math.round(currentSparkRgb[2])}`;
+
+      bgCtx.strokeStyle = gridColorStr;
       bgCtx.lineWidth = 1;
 
       for (let x = 0; x <= bgCanvas.width; x += GRID_SIZE) {
@@ -592,43 +880,80 @@ if (file_exists($phonetics_file)) {
         bgCtx.stroke();
       }
 
-      // 2. Spawn Short Subtle Energy Pulses (Max 3 Active Sparks)
-      if (Math.random() < 0.03 && sparks.length < 3) {
-        spawnElectricSpark();
-      }
+      if (Math.random() < 0.035 && sparks.length < 3) spawnElectricSpark();
 
-      // 3. Render Micro-Pulse Gradient Sparks
+      const hSparks = sparks.filter(s => s.dir.startsWith('h'));
+      const vSparks = sparks.filter(s => s.dir.startsWith('v'));
+
+      hSparks.forEach(h => {
+        vSparks.forEach(v => {
+          const ix = v.x;
+          const iy = h.y;
+
+          const minHx = Math.min(h.x, h.x + (h.dir === 'h+' ? h.length : -h.length));
+          const maxHx = Math.max(h.x, h.x + (h.dir === 'h+' ? h.length : -h.length));
+          const minVy = Math.min(v.y, v.y + (v.dir === 'v+' ? v.length : -v.length));
+          const maxVy = Math.max(v.y, v.y + (v.dir === 'v+' ? v.length : -v.length));
+
+          if (minHx <= ix && ix <= maxHx && minVy <= iy && iy <= maxVy) {
+            if (!bursts.some(b => Math.abs(b.x - ix) < 8 && Math.abs(b.y - iy) < 8)) {
+              bursts.push({ x: ix, y: iy, radius: 3, alpha: 1.0 });
+            }
+          }
+        });
+      });
+
+      bursts.forEach((b, bIdx) => {
+        bgCtx.save();
+        bgCtx.shadowColor = `rgba(${sparkColorStr}, 1.0)`;
+        bgCtx.shadowBlur = 18;
+
+        bgCtx.fillStyle = `#ffffff`;
+        bgCtx.beginPath();
+        bgCtx.arc(b.x, b.y, Math.max(1, b.radius * 0.4), 0, Math.PI * 2);
+        bgCtx.fill();
+
+        bgCtx.strokeStyle = `rgba(${sparkColorStr}, ${b.alpha})`;
+        bgCtx.lineWidth = 2;
+        bgCtx.beginPath();
+        bgCtx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        bgCtx.stroke();
+        bgCtx.restore();
+
+        b.radius += 0.65;
+        b.alpha -= 0.06;
+        if (b.alpha <= 0) bursts.splice(bIdx, 1);
+      });
+
       sparks.forEach((s, idx) => {
         bgCtx.lineWidth = 1.5;
-        bgCtx.shadowColor = `rgba(${currentSparkRgb}, 0.8)`;
-        bgCtx.shadowBlur = 6;
+        bgCtx.shadowColor = `rgba(${sparkColorStr}, 0.75)`;
+        bgCtx.shadowBlur = 14;
 
         let grad;
-        if (s.dir === 'h') {
-          grad = bgCtx.createLinearGradient(s.x, s.y, s.x + s.length, s.y);
-          grad.addColorStop(0, `rgba(${currentSparkRgb}, 0)`);
-          grad.addColorStop(1, `rgba(${currentSparkRgb}, 0.75)`);
+        if (s.dir.startsWith('h')) {
+          grad = bgCtx.createLinearGradient(s.x, s.y, s.x + (s.dir === 'h+' ? s.length : -s.length), s.y);
+          grad.addColorStop(0, `rgba(${sparkColorStr}, 0)`);
+          grad.addColorStop(1, `rgba(${sparkColorStr}, 0.65)`);
           bgCtx.strokeStyle = grad;
-
           bgCtx.beginPath();
           bgCtx.moveTo(s.x, s.y);
-          bgCtx.lineTo(s.x + s.length, s.y);
+          bgCtx.lineTo(s.x + (s.dir === 'h+' ? s.length : -s.length), s.y);
           bgCtx.stroke();
           s.x += s.speed;
         } else {
-          grad = bgCtx.createLinearGradient(s.x, s.y, s.x, s.y + s.length);
-          grad.addColorStop(0, `rgba(${currentSparkRgb}, 0)`);
-          grad.addColorStop(1, `rgba(${currentSparkRgb}, 0.75)`);
+          grad = bgCtx.createLinearGradient(s.x, s.y, s.x, s.y + (s.dir === 'v+' ? s.length : -s.length));
+          grad.addColorStop(0, `rgba(${sparkColorStr}, 0)`);
+          grad.addColorStop(1, `rgba(${sparkColorStr}, 0.65)`);
           bgCtx.strokeStyle = grad;
-
           bgCtx.beginPath();
           bgCtx.moveTo(s.x, s.y);
-          bgCtx.lineTo(s.x, s.y + s.length);
+          bgCtx.lineTo(s.x, s.y + (s.dir === 'v+' ? s.length : -s.length));
           bgCtx.stroke();
           s.y += s.speed;
         }
 
-        if (s.x > bgCanvas.width + 50 || s.y > bgCanvas.height + 50) {
+        if ((s.dir === 'h+' && s.x > bgCanvas.width + 60) || (s.dir === 'h-' && s.x < -60) || (s.dir === 'v+' && s.y > bgCanvas.height + 60) || (s.dir === 'v-' && s.y < -60)) {
           sparks.splice(idx, 1);
         }
       });
@@ -638,74 +963,51 @@ if (file_exists($phonetics_file)) {
     }
     animateElectrifiedGrid();
 
-    // --- TV_24H SYSTEM-WIDE TIME FORMATTER ---
+    // --- SYSTEM TIME ---
     const tv24hSetting = <?php echo $tv_24h; ?>;
-
     function getFormattedTime(date = new Date(), includeSeconds = true) {
       let hours = date.getHours();
       const minutes = String(date.getMinutes()).padStart(2, '0');
       const seconds = String(date.getSeconds()).padStart(2, '0');
       const secStr = includeSeconds ? `:${seconds}` : '';
-
-      if (tv24hSetting === 1) {
-        return `${String(hours).padStart(2, '0')}:${minutes}${secStr}`;
-      } else if (tv24hSetting === 2) {
+      if (tv24hSetting === 1) return `${String(hours).padStart(2, '0')}:${minutes}${secStr}`;
+      if (tv24hSetting === 2) {
         const ampm = hours >= 12 ? 'PM' : 'AM';
         hours = hours % 12 || 12;
         return `${hours}:${minutes}${secStr} ${ampm}`;
-      } else {
-        hours = hours % 12 || 12;
-        return `${hours}:${minutes}${secStr}`;
       }
+      hours = hours % 12 || 12;
+      return `${hours}:${minutes}${secStr}`;
     }
-
     function updateClock() {
       const clockEl = document.getElementById('clock');
       if (clockEl) clockEl.innerText = getFormattedTime(new Date(), true);
     }
-
     updateClock();
     setInterval(updateClock, 1000);
 
-    // --- MOUSE CURSOR IDLE HIDE ---
+    // --- CURSOR HIDE ---
     let cursorTimer;
     function resetCursorTimer() {
       document.body.style.cursor = 'default';
       clearTimeout(cursorTimer);
-      cursorTimer = setTimeout(() => {
-        document.body.style.cursor = 'none';
-      }, 5000);
+      cursorTimer = setTimeout(() => { document.body.style.cursor = 'none'; }, 5000);
     }
     window.addEventListener('mousemove', resetCursorTimer);
     resetCursorTimer();
 
-    // --- DYNAMIC PHONETIC DICTIONARY ENGINE ---
+    // --- PHONETICS ---
     const phoneticsMap = <?php echo json_encode($phonetics_map, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-
     function sanitizePhonetics(phrase) {
       if (!phrase) return '';
       let text = phrase;
-
-      // Convert raw IPv4 addresses for TTS ONLY (e.g., 10.0.0.10 -> 10 dot 0 dot 0 dot 10)
       text = text.replace(/\b(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\b/g, '$1 dot $2 dot $3 dot $4');
-
-      // Apply dynamic dictionary rules from phonetics.conf
       for (const [key, val] of Object.entries(phoneticsMap)) {
         const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const isPureWord = /^\w+$/.test(key);
-        const pattern = isPureWord
-          ? new RegExp(`\\b${escapedKey}\\b`, 'gi')
-          : new RegExp(escapedKey, 'gi');
-
+        const pattern = /^\w+$/.test(key) ? new RegExp(`\\b${escapedKey}\\b`, 'gi') : new RegExp(escapedKey, 'gi');
         text = text.replace(pattern, val);
       }
-
-      // Cleanup formatting, slashes, and excess whitespace
-      return text
-        .replace(/([a-zA-Z0-9]+)\s*\/\s*([a-zA-Z0-9]+)/g, '$1 and $2')
-        .replace(/[*_#`"'\r\n]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      return text.replace(/([a-zA-Z0-9]+)\s*\/\s*([a-zA-Z0-9]+)/g, '$1 and $2').replace(/[*_#`"'\r\n]/g, ' ').replace(/\s+/g, ' ').trim();
     }
 
     function getStateClass(code) {
@@ -718,47 +1020,27 @@ if (file_exists($phonetics_file)) {
     function appendChatMessage(sender, text, isAi = false, stateType = '') {
       const log = document.getElementById('chat-log');
       if (!log) return;
+      if (log.children.length === 1 && log.children[0].innerText.includes('Initializing')) log.innerHTML = '';
 
-      if (log.children.length === 1 && log.children[0].innerText.includes('Initializing')) {
-        log.innerHTML = '';
-      }
-
-      let stateClass = '';
-      if (typeof stateType === 'string') {
-        stateClass = stateType;
-      } else if (stateType === true) {
-        stateClass = 'crit';
-      }
-
-      const timeStr = getFormattedTime(new Date(), true);
+      let stateClass = typeof stateType === 'string' ? stateType : (stateType === true ? 'crit' : '');
       const msgDiv = document.createElement('div');
       msgDiv.className = `chat-item ${isAi ? 'ai' : ''} ${stateClass}`;
-      msgDiv.innerHTML = `
-        <div class="chat-meta">
-          <span>${sender}</span>
-          <span>${timeStr}</span>
-        </div>
-        <div class="chat-text">${text}</div>
-      `;
+      msgDiv.innerHTML = `<div class="chat-meta"><span>${sender}</span><span>${getFormattedTime(new Date(), true)}</span></div><div class="chat-text">${text}</div>`;
 
       log.insertBefore(msgDiv, log.firstChild);
       log.scrollTop = 0;
-
-      while (log.children.length > 20) {
-        log.removeChild(log.lastChild);
-      }
+      while (log.children.length > 20) log.removeChild(log.lastChild);
     }
 
-    // --- SPEECH QUEUE ENGINE ---
+    // --- SPEECH QUEUE ENGINE & CELEBRATION TRIGGER ---
     window.speechQueue = [];
     window.isSpeaking = false;
     window.currentUtterance = null;
+    window.celebrationPending = false;
 
     if ('speechSynthesis' in window) {
       window.speechSynthesis.getVoices();
-      window.speechSynthesis.onvoiceschanged = () => {
-        if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
-      };
+      window.speechSynthesis.onvoiceschanged = () => { if ('speechSynthesis' in window) window.speechSynthesis.getVoices(); };
     }
 
     function enqueueSpeech(displayPhrase, speechPhrase = null, isAi = false, stateType = '', sender = '[NEMS COMMAND]') {
@@ -803,6 +1085,11 @@ if (file_exists($phonetics_file)) {
           setTimeout(processSpeechQueue, 250);
         };
 
+        if (window.celebrationPending) {
+          launchFireworks();
+          window.celebrationPending = false;
+        }
+
         window.speechSynthesis.speak(window.currentUtterance);
 
       } catch(e) {
@@ -819,36 +1106,40 @@ if (file_exists($phonetics_file)) {
       const stateClass = eventType === 'recovery' ? 'ok' : getStateClass(checkData.state);
       const senderTag = eventType === 'incident' ? '[ALERT TRANSMISSION]' : '[RECOVERY TRANSMISSION]';
 
+      if (!isInitialLoad) {
+        const soundType = (currentOverallSla < 75 && eventType === 'incident') ? 'klaxon' : (eventType === 'incident' ? 'alert' : 'recovery');
+        playTacticalSound(soundType);
+      }
+
+      const payload = { event_type: eventType, baseline_text: baselineText, timestamp: Math.floor(Date.now() / 1000), check_data: checkData };
+      console.log(`%c[NEMS AI] Outbound Request (${eventType})`, 'color: #00f0ff; font-weight: bold;', payload);
+
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 45000);
-
-        const res = await fetch('/nems-api/nems-ai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            event_type: eventType,
-            baseline_text: baselineText,
-            timestamp: Math.floor(Date.now() / 1000),
-            check_data: checkData
-          })
-        }).then(r => r.json());
-
+        const res = await fetch('/nems-api/nems-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal, body: JSON.stringify(payload) }).then(r => r.json());
         clearTimeout(timeoutId);
+        console.log(`%c[NEMS AI] Synthesis Response`, 'color: #00ff88; font-weight: bold;', res);
 
         if (res && res.success && res.ai_active && res.speech_text) {
           speechText = res.speech_text;
           displayText = res.display_text || res.speech_text;
           isAiEngine = true;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.log(`%c[NEMS AI] Request Timed Out / Failed`, 'color: #ff0055; font-weight: bold;', e);
+      }
 
       enqueueSpeech(displayText, speechText, isAiEngine, stateClass, senderTag);
     }
 
-    async function dispatchBatchIncidents(newIncidents) {
+    async function dispatchBatchIncidents(newIncidents, totalDownHosts) {
       if (!newIncidents || newIncidents.length === 0) return;
+
+      if (!isInitialLoad) {
+        const soundType = currentOverallSla < 75 ? 'klaxon' : 'alert';
+        playTacticalSound(soundType);
+      }
 
       let primaryStateClass = 'unk';
       if (newIncidents.some(i => i.stateCode === 2)) primaryStateClass = 'crit';
@@ -857,108 +1148,76 @@ if (file_exists($phonetics_file)) {
       if (newIncidents.length === 1) {
         const inc = newIncidents[0];
         const hostAlias = inc.alias || inc.host;
-        const baselineText = inc.checkName === 'HOST DOWN'
-          ? `Server ${hostAlias} is offline.`
-          : `Service ${inc.checkName} on ${hostAlias} is reporting ${inc.stateText}.`;
-
-        dispatchSpeechEvent('incident', baselineText, {
-          host_name: inc.host,
-          host_alias: hostAlias,
-          service_description: inc.checkName,
-          state: inc.stateCode,
-          plugin_output: inc.msg
-        });
+        const baselineText = inc.checkName === 'HOST DOWN' ? `Server ${hostAlias} is offline.` : `Service ${inc.checkName} on ${hostAlias} is reporting ${inc.stateText}.`;
+        dispatchSpeechEvent('incident', baselineText, { host_name: inc.host, host_alias: hostAlias, service_description: inc.checkName, state: inc.stateCode, plugin_output: inc.msg });
         return;
       }
 
-      const baselineText = `${newIncidents.length} tactical incidents detected across monitored nodes.`;
+      const downCount = newIncidents.filter(i => i.checkName === 'HOST DOWN').length;
+      const newlyHostStr = downCount === 1 ? 'host' : 'hosts';
+      const totalHostStr = totalDownHosts === 1 ? 'host is' : 'hosts are';
+      
+      const baselineText = downCount > 0 
+        ? `Tactical alert: ${downCount} newly offline ${newlyHostStr} detected. A total of ${totalDownHosts} ${totalHostStr} currently offline.`
+        : `${newIncidents.length} active incident${newIncidents.length === 1 ? '' : 's'} detected across monitored nodes.`;
+
+      const payload = { event_type: 'batch_incidents', baseline_text: baselineText, incidents: newIncidents.slice(0, 5) };
+      console.log(`%c[NEMS AI] Outbound Request (Batch Incidents)`, 'color: #ffaa00; font-weight: bold;', payload);
 
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 45000);
-
-        const res = await fetch('/nems-api/nems-ai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            event_type: 'batch_incidents',
-            baseline_text: baselineText,
-            incidents: newIncidents
-          })
-        }).then(r => r.json());
-
+        const res = await fetch('/nems-api/nems-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal, body: JSON.stringify(payload) }).then(r => r.json());
         clearTimeout(timeoutId);
+        console.log(`%c[NEMS AI] Synthesis Response`, 'color: #00ff88; font-weight: bold;', res);
 
         if (res && res.success && res.ai_active && res.speech_text) {
           enqueueSpeech(res.display_text, res.speech_text, true, primaryStateClass, '[ALERT TRANSMISSION]');
           return;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.log(`%c[NEMS AI] Request Timed Out / Failed`, 'color: #ff0055; font-weight: bold;', e);
+      }
 
-      newIncidents.forEach(inc => {
-        const hostAlias = inc.alias || inc.host;
-        const fallbackText = inc.checkName === 'HOST DOWN'
-          ? `Server ${hostAlias} is offline.`
-          : `Service ${inc.checkName} on ${hostAlias} is reporting ${inc.stateText}.`;
-        enqueueSpeech(fallbackText, fallbackText, false, getStateClass(inc.stateCode), '[ALERT TRANSMISSION]');
-      });
+      enqueueSpeech(baselineText, baselineText, false, primaryStateClass, '[ALERT TRANSMISSION]');
     }
 
     async function dispatchBatchRecoveries(newRecoveries) {
       if (!newRecoveries || newRecoveries.length === 0) return;
 
+      if (!isInitialLoad) playTacticalSound('recovery');
+
       if (newRecoveries.length === 1) {
         const item = newRecoveries[0];
         const hostAlias = item.alias || item.host;
-        const baselineText = item.checkName === 'HOST DOWN'
-          ? `Server ${hostAlias} is back online.`
-          : (item.msg 
-              ? `Service ${item.checkName} on ${hostAlias} has recovered: ${item.msg}`
-              : `Service ${item.checkName} on ${hostAlias} has returned to normal operational status.`);
-
-        dispatchSpeechEvent('recovery', baselineText, {
-          host_name: item.host,
-          host_alias: item.hostAlias,
-          service_description: item.checkName,
-          state: 0,
-          plugin_output: item.msg
-        });
+        const baselineText = item.checkName === 'HOST DOWN' ? `Server ${hostAlias} is back online.` : `Service ${item.checkName} on ${hostAlias} has returned to normal operational status.`;
+        dispatchSpeechEvent('recovery', baselineText, { host_name: item.host, host_alias: item.alias || item.host, service_description: item.checkName, state: 0, plugin_output: item.msg });
         return;
       }
 
-      const baselineText = `${newRecoveries.length} services have returned to normal status.`;
+      const hostsAffected = new Set(newRecoveries.map(r => r.alias || r.host));
+      const hostListStr = Array.from(hostsAffected).slice(0, 3).join(', ') + (hostsAffected.size > 3 ? ' and others' : '');
+      const baselineText = `${newRecoveries.length} services have recovered on ${hostListStr}.`;
+
+      const payload = { event_type: 'batch_recoveries', baseline_text: baselineText, recoveries: newRecoveries.slice(0, 5) };
+      console.log(`%c[NEMS AI] Outbound Request (Batch Recoveries)`, 'color: #00f0ff; font-weight: bold;', payload);
 
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 45000);
-
-        const res = await fetch('/nems-api/nems-ai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            event_type: 'batch_recoveries',
-            baseline_text: baselineText,
-            recoveries: newRecoveries
-          })
-        }).then(r => r.json());
-
+        const res = await fetch('/nems-api/nems-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal, body: JSON.stringify(payload) }).then(r => r.json());
         clearTimeout(timeoutId);
+        console.log(`%c[NEMS AI] Synthesis Response`, 'color: #00ff88; font-weight: bold;', res);
 
         if (res && res.success && res.ai_active && res.speech_text) {
           enqueueSpeech(res.display_text, res.speech_text, true, 'ok', '[RECOVERY TRANSMISSION]');
           return;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.log(`%c[NEMS AI] Request Timed Out / Failed`, 'color: #ff0055; font-weight: bold;', e);
+      }
 
-      newRecoveries.forEach(item => {
-        const hostAlias = item.alias || item.host;
-        const fallbackText = item.checkName === 'HOST DOWN'
-          ? `Server ${hostAlias} is back online.`
-          : `Service ${item.checkName} on ${hostAlias} has returned to normal.`;
-        enqueueSpeech(fallbackText, fallbackText, false, 'ok', '[RECOVERY TRANSMISSION]');
-      });
+      enqueueSpeech(baselineText, baselineText, false, 'ok', '[RECOVERY TRANSMISSION]');
     }
 
     function announceWelcomeOverview(hosts, services, incidents, overallSla) {
@@ -1021,7 +1280,6 @@ if (file_exists($phonetics_file)) {
       function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         let active = false;
-
         particles.forEach(p => {
           if (p.alpha > 0) {
             active = true;
@@ -1029,7 +1287,6 @@ if (file_exists($phonetics_file)) {
             p.y += p.vy;
             p.vy += 0.1;
             p.alpha -= p.decay;
-
             ctx.globalAlpha = Math.max(0, p.alpha);
             ctx.fillStyle = p.color;
             ctx.beginPath();
@@ -1037,14 +1294,70 @@ if (file_exists($phonetics_file)) {
             ctx.fill();
           }
         });
-
         if (active) requestAnimationFrame(render);
         else ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
       render();
     }
 
-    // --- INFRASTRUCTURE HEALTH TIMELINE CHART ---
+    // --- HIGH-RESOLUTION 48-SEGMENT BINARY HISTORICAL STRIP ENGINE (30-MIN BLOCKS) ---
+    const HOST_30MIN_KEY = 'nems_noc_host_48seg_history_v1';
+    const SEGMENT_COUNT = 48; // 48 * 30 mins = 24 Hours
+    const THIRTY_MIN_MS = 30 * 60 * 1000;
+
+    function updateAndGetHost24hBarHtml(hostName, currentStateCode) {
+      let historyMap = {};
+      try {
+        const stored = localStorage.getItem(HOST_30MIN_KEY);
+        if (stored) historyMap = JSON.parse(stored);
+      } catch(e) {}
+
+      const currentSlot = Math.floor(Date.now() / THIRTY_MIN_MS);
+
+      if (!historyMap[hostName] || typeof historyMap[hostName].lastSlot !== 'number' || !Array.isArray(historyMap[hostName].segments) || historyMap[hostName].segments.length !== SEGMENT_COUNT) {
+        historyMap[hostName] = {
+          lastSlot: currentSlot,
+          segments: new Array(SEGMENT_COUNT).fill('seg-ok')
+        };
+      }
+
+      let hostData = historyMap[hostName];
+
+      // Shift array left as 30-min slots pass
+      if (hostData.lastSlot < currentSlot) {
+        const slotsPassed = Math.min(SEGMENT_COUNT, currentSlot - hostData.lastSlot);
+        for (let i = 0; i < slotsPassed; i++) {
+          hostData.segments.shift();
+          hostData.segments.push('seg-ok');
+        }
+        hostData.lastSlot = currentSlot;
+      }
+
+      // Any non-zero state code (Warning, Critical, Unknown) marks the current slot (far right) as BAD (Red)
+      if (currentStateCode !== 0) {
+        hostData.segments[SEGMENT_COUNT - 1] = 'seg-crit';
+      }
+
+      try {
+        localStorage.setItem(HOST_30MIN_KEY, JSON.stringify(historyMap));
+      } catch(e) {}
+
+      // Build 48 segment HTML strip
+      const segmentsHtml = hostData.segments.map((cls, idx) => {
+        const slotsAgo = (SEGMENT_COUNT - 1) - idx;
+        const minsAgo = slotsAgo * 30;
+        let timeLabel = 'Current 30m';
+        if (minsAgo > 0) {
+          const hrs = (minsAgo / 60).toFixed(minsAgo % 60 === 0 ? 0 : 1);
+          timeLabel = `${hrs}h ago`;
+        }
+        return `<div class="history-bar-segment ${cls}" title="${timeLabel}: ${cls === 'seg-ok' ? 'OK' : 'PROBLEM DETECTED'}"></div>`;
+      }).join('');
+
+      return `<div class="history-bar-container" title="24-Hour Historical Uptime (48 x 30m Blocks)">${segmentsHtml}</div>`;
+    }
+
+    // --- INFRASTRUCTURE HEALTH TIMELINE CHART (CONTINUOUS OVERALL HEALTH SLA) ---
     const SLA_STORAGE_KEY = 'nems_noc_sla_timestamps_24h';
     const MAX_SLA_POINTS = 288;
     const FIVE_MIN_MS = 5 * 60 * 1000;
@@ -1053,16 +1366,12 @@ if (file_exists($phonetics_file)) {
       const stored = localStorage.getItem(SLA_STORAGE_KEY);
       const now = Date.now();
       const currentBucket = Math.floor(now / FIVE_MIN_MS) * FIVE_MIN_MS;
-
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-          if (parsed && Array.isArray(parsed.timestamps) && Array.isArray(parsed.data) && parsed.data.length > 0) {
-            return parsed;
-          }
+          if (parsed && Array.isArray(parsed.timestamps) && Array.isArray(parsed.data) && parsed.data.length > 0) return parsed;
         } catch(e) {}
       }
-      
       return { timestamps: [currentBucket], data: [], lastBucket: currentBucket };
     }
 
@@ -1077,13 +1386,11 @@ if (file_exists($phonetics_file)) {
         hist.lastBucket = currentBucket;
       } else {
         const bucketDiff = Math.floor((currentBucket - hist.lastBucket) / FIVE_MIN_MS);
-
         if (bucketDiff > 0) {
           for (let i = 1; i <= bucketDiff; i++) {
             const nextBucket = hist.lastBucket + (i * FIVE_MIN_MS);
             hist.timestamps.push(nextBucket);
             hist.data.push(numericVal);
-
             if (hist.data.length > MAX_SLA_POINTS) {
               hist.timestamps.shift();
               hist.data.shift();
@@ -1097,7 +1404,13 @@ if (file_exists($phonetics_file)) {
 
       localStorage.setItem(SLA_STORAGE_KEY, JSON.stringify(hist));
       const labels = hist.timestamps.map(ts => getFormattedTime(new Date(ts), false));
-      return { labels, data: hist.data };
+
+      let avgHealth = 100;
+      if (hist.data.length > 0) {
+        const sum = hist.data.reduce((acc, v) => acc + v, 0);
+        avgHealth = Math.round(sum / hist.data.length);
+      }
+      return { labels, data: hist.data, avgHealth };
     }
 
     const initialHist = updateSlaHistory(100);
@@ -1147,9 +1460,8 @@ if (file_exists($phonetics_file)) {
       if (!wrapper) return 6;
       const rect = wrapper.getBoundingClientRect();
       const colWidth = 280;
-      const rowHeight = 100;
+      const rowHeight = 108;
       const gap = 10;
-
       const cols = Math.max(1, Math.floor((rect.width + gap) / (colWidth + gap)));
       const rows = Math.max(1, Math.floor((rect.height + gap) / (rowHeight + gap)));
       return Math.max(1, cols * rows);
@@ -1169,25 +1481,40 @@ if (file_exists($phonetics_file)) {
       const pageSize = calculateDynamicPageSize();
       const totalPages = Math.ceil(cachedMappedHosts.length / pageSize);
       if (currentHostPage >= totalPages) currentHostPage = 0;
-
       indicator.innerText = `PAGE ${currentHostPage + 1}/${totalPages}`;
 
       const startIndex = currentHostPage * pageSize;
       const pageHosts = cachedMappedHosts.slice(startIndex, startIndex + pageSize);
 
       const renderCards = () => {
-        grid.innerHTML = pageHosts.map(h => `
-          <div class="node-card ${h.compositeState}">
-            <div class="node-header">
-              <div class="node-name" title="${h.alias || h.name}">${h.alias || h.name}</div>
-              <span class="node-status-badge">${h.statusText}</span>
+        grid.innerHTML = pageHosts.map(h => {
+          let svcText = '';
+          if (h.svcs.length === 0) svcText = 'MONITORING UPTIME';
+          else if (h.svcs.length === 1) svcText = '1 SERVICE MONITORED';
+          else svcText = `${h.svcs.length} SERVICES MONITORED`;
+
+          let stateCodeNum = 0;
+          if (h.compositeState === 'warn' || h.compositeState === 'unk') stateCodeNum = 1;
+          if (h.compositeState === 'crit') stateCodeNum = 2;
+
+          const historyBarHtml = updateAndGetHost24hBarHtml(h.name, stateCodeNum);
+
+          return `
+            <div class="node-card ${h.compositeState}">
+              <div class="node-header">
+                <div class="node-name" title="${h.alias || h.name}">${h.alias || h.name}</div>
+                <span class="node-status-badge">${h.statusText}</span>
+              </div>
+              <div class="node-card-bottom">
+                ${historyBarHtml}
+                <div class="node-card-meta-row">
+                  <span>${svcText}</span>
+                  <span>${h.address || 'LOCAL'}</span>
+                </div>
+              </div>
             </div>
-            <div class="node-card-bottom">
-              <span>${h.svcs.length} SERVICES MONITORED</span>
-              <span>${h.address || 'LOCAL'}</span>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       };
 
       if (forceImmediate || totalPages === 1) {
@@ -1210,47 +1537,49 @@ if (file_exists($phonetics_file)) {
         renderPagedHostMatrix(false);
       }
     }, 8000);
-
     window.addEventListener('resize', () => renderPagedHostMatrix(true));
 
     // --- MAIN API FETCH & STATE LOOP ---
     let consecutiveFailures = 0;
+    let uiAborted = false;
 
     async function fetchNemsData() {
       try {
-        const [hostsRes, svcsRes] = await Promise.all([
-          fetch('/nems-api/hosts?Columns=name,alias,state,address,plugin_output,last_state_change').then(r => r.json()),
-          fetch('/nems-api/services?Columns=host_name,description,state,plugin_output,perf_data,last_state_change').then(r => r.json())
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // Fast UI Freeze Protection
+
+        const [hostsRes, svcsRes, loadRes] = await Promise.all([
+          fetch('/nems-api/hosts?Columns=name,alias,state,address,plugin_output,last_state_change', { signal: controller.signal }).then(r => r.json()),
+          fetch('/nems-api/services?Columns=host_name,description,state,plugin_output,perf_data,last_state_change', { signal: controller.signal }).then(r => r.json()),
+          fetch('?getload=1', { signal: controller.signal }).then(r => r.json()).catch(() => ({ load: [0,0,0], cores: 1 }))
         ]);
 
-        if (!hostsRes.success || !svcsRes.success) throw new Error("API Failure");
+        clearTimeout(timeoutId);
 
-        // Clear Lost Connection Overlay
+        if (!hostsRes.success || !svcsRes.success) throw new Error("API Structure Failure");
+
         consecutiveFailures = 0;
-        document.getElementById('connection-lost-overlay').classList.remove('active');
+        if (uiAborted) {
+          uiAborted = false;
+          document.getElementById('connection-lost-overlay').classList.remove('active');
+        }
 
         const hosts = hostsRes.content || [];
         const services = svcsRes.content || [];
 
-        // 1. Detect Added or Removed Hosts
+        // Detect Added or Removed Hosts
         if (trackedHostMap !== null) {
           const currentHostNames = new Set(hosts.map(h => h.name));
-          
           hosts.forEach(h => {
-            if (!trackedHostMap.has(h.name)) {
-              enqueueSpeech(`New host ${h.alias || h.name} has been added to NEMS monitoring.`, null, false, 'ok', '[SYSTEM NOTICE]');
-            }
+            if (!trackedHostMap.has(h.name)) enqueueSpeech(`New host ${h.alias || h.name} has been added to NEMS monitoring.`, null, false, 'ok', '[SYSTEM NOTICE]');
           });
-
           trackedHostMap.forEach((alias, name) => {
-            if (!currentHostNames.has(name)) {
-              enqueueSpeech(`Host ${alias || name} was removed from NEMS monitoring.`, null, false, 'warn', '[SYSTEM NOTICE]');
-            }
+            if (!currentHostNames.has(name)) enqueueSpeech(`Host ${alias || name} was removed from NEMS monitoring.`, null, false, 'warn', '[SYSTEM NOTICE]');
           });
         }
         trackedHostMap = new Map(hosts.map(h => [h.name, h.alias || h.name]));
 
-        // 2. Map Composite States
+        // Map Composite States
         cachedMappedHosts = hosts.map(h => {
           const hostSvcs = services.filter(s => s.host_name === h.name);
           let compositeState = 'ok';
@@ -1267,9 +1596,8 @@ if (file_exists($phonetics_file)) {
             statusText = '▲ WARNING SERVICE';
           } else if (hostSvcs.some(s => s.state === 3)) {
             compositeState = 'unk';
-            statusText = '? UNKNOWN SERVICE';
+            statusText = '? SERVICE STATE UNKNOWN';
           }
-
           return { ...h, compositeState, statusText, svcs: hostSvcs };
         });
 
@@ -1295,32 +1623,66 @@ if (file_exists($phonetics_file)) {
         const totalGood = hUp + sOk;
         const overallSla = totalObj > 0 ? Math.round((totalGood / totalObj) * 100) : 100;
 
-        document.getElementById('sla-val').innerText = `${overallSla}%`;
-        document.getElementById('host-health').innerText = `${hostSla}%`;
-        document.getElementById('svc-health').innerText = `${svcSla}%`;
+        currentOverallSla = overallSla;
 
-        // 3. Update Electrified Background Theme Based on Overall State
-        if (hDown > 0 || sCrit > 0) updateElectrifiedTheme('crit');
-        else if (sWarn > 0) updateElectrifiedTheme('warn');
+        // Overall Health Threshold Theme Shift
+        if (overallSla < 75) updateElectrifiedTheme('crit');
+        else if (overallSla < 90) updateElectrifiedTheme('warn');
         else updateElectrifiedTheme('ok');
 
-        // 4. 100% Health Celebration Trigger
-        if (previousOverallHealth !== null && previousOverallHealth < 100 && overallSla === 100) {
-          launchFireworks();
-          dispatchSpeechEvent('celebration', "Sensors report infrastructure health has reached 100 percent. Outstanding work team.", {});
-        }
-        previousOverallHealth = overallSla;
-
-        // 5. Timeline Update
+        // Timeline Update (Continuous Overall SLA Percentage Curve)
         const updatedHist = updateSlaHistory(overallSla);
         slaChart.data.labels = updatedHist.labels;
         slaChart.data.datasets[0].data = updatedHist.data;
-        slaChart.data.datasets[0].pointRadius = updatedHist.data.length === 1 ? 3 : 0;
+        
+        const slaColor = getHealthThresholdColor(overallSla);
+        slaChart.data.datasets[0].borderColor = slaColor;
+        
+        let fillColor = 'rgba(0, 240, 255, 0.12)';
+        if (slaColor === '#00f0ff') fillColor = 'rgba(0, 240, 255, 0.12)';
+        else if (slaColor === '#ffaa00') fillColor = 'rgba(255, 170, 0, 0.12)';
+        else if (slaColor === '#ff0055') fillColor = 'rgba(255, 0, 85, 0.12)';
+        
+        slaChart.data.datasets[0].backgroundColor = fillColor;
         slaChart.update('none');
 
-        // 6. Smart Telemetry Meters
+        // Render Sci-Fi HUD Radial Gauges
+        renderSciFiGauge('gauge-overall', overallSla);
+        renderSciFiGauge('gauge-avg', updatedHist.avgHealth);
+        renderSciFiGauge('gauge-host', hostSla);
+        renderSciFiGauge('gauge-svc', svcSla);
+
+        // Smart Telemetry Meters & Server CPU Load
         const perfContainer = document.getElementById('perf-widgets');
         let perfHtml = '';
+
+        const loadArray = loadRes.load || [0,0,0];
+        const cores = loadRes.cores || 1;
+        const load1 = Array.isArray(loadArray) && loadArray.length >= 1 ? parseFloat(loadArray[0]) : 0;
+        const load15 = Array.isArray(loadArray) && loadArray.length >= 3 ? parseFloat(loadArray[2]) : 0;
+        
+        const load1Pct = (load1 / cores) * 100;
+        const load1Color = load1Pct > 90 ? 'var(--crit)' : (load1Pct > 70 ? 'var(--warn)' : 'var(--static-cyan)');
+        const load1Fill = Math.min(100, load1Pct);
+        
+        const load15Pct = (load15 / cores) * 100;
+        const load15Color = load15Pct > 90 ? 'var(--crit)' : (load15Pct > 70 ? 'var(--warn)' : 'var(--green)');
+        const load15Fill = Math.min(100, load15Pct);
+
+        perfHtml += `
+          <div class="perf-widget">
+            <div class="perf-title">🖥 NEMS Server CPU Load</div>
+            <div class="dual-meter-row">
+              <div class="meter-sub-box">
+                <span style="color:${load1Color}; font-weight:bold;">Current: ${load1.toFixed(2)} (${load1Pct.toFixed(0)}%)</span>
+                <div class="meter-bar-track"><div class="meter-bar-fill" style="width: ${load1Fill}%; background:${load1Color};"></div></div>
+              </div>
+              <div class="meter-sub-box">
+                <span style="color:${load15Color}; font-weight:bold;">Average: ${load15.toFixed(2)} (${load15Pct.toFixed(0)}%)</span>
+                <div class="meter-bar-track"><div class="meter-bar-fill" style="width: ${load15Fill}%; background:${load15Color};"></div></div>
+              </div>
+            </div>
+          </div>`;
 
         let tempVal = null, humidVal = null, speedOutput = null;
 
@@ -1351,21 +1713,20 @@ if (file_exists($phonetics_file)) {
               <div class="perf-title">⚡ WAN Speedtest</div>
               <div class="dual-meter-row">
                 <div class="meter-sub-box">
-                  <span style="color:var(--cyan); font-weight:bold;">Down: ${dl.toFixed(1)} Mbps</span>
+                  <span style="color:var(--static-cyan); font-weight:bold;">↓ ${dl.toFixed(1)} Mbps</span>
                   <div class="meter-bar-track"><div class="meter-bar-fill" style="width: ${Math.min(100, (dl/1000)*100)}%;"></div></div>
                 </div>
                 <div class="meter-sub-box">
-                  <span style="color:var(--green); font-weight:bold;">Up: ${ul.toFixed(1)} Mbps</span>
+                  <span style="color:var(--green); font-weight:bold;">↑ ${ul.toFixed(1)} Mbps</span>
                   <div class="meter-bar-track"><div class="meter-bar-fill" style="width: ${Math.min(100, (ul/1000)*100)}%; background:var(--green);"></div></div>
                 </div>
               </div>
             </div>`;
         }
 
-        // Thermal & Environmental Meters
         if (tempVal !== null || humidVal !== null) {
           perfHtml += `<div class="perf-widget"><div class="perf-title">🌡 Ambient Environment</div><div class="dual-meter-row">`;
-          
+
           if (tempVal !== null) {
             perfHtml += `
               <div class="meter-sub-box">
@@ -1376,7 +1737,7 @@ if (file_exists($phonetics_file)) {
           if (humidVal !== null) {
             perfHtml += `
               <div class="meter-sub-box">
-                <span style="color:var(--cyan); font-weight:bold;">${humidVal.toFixed(1)}% Humidity</span>
+                <span style="color:var(--static-cyan); font-weight:bold;">${humidVal.toFixed(1)}% Humidity</span>
                 <div class="meter-bar-track"><div class="meter-bar-fill" style="width: ${Math.min(100, humidVal)}%;"></div></div>
               </div>`;
           }
@@ -1385,7 +1746,7 @@ if (file_exists($phonetics_file)) {
 
         perfContainer.innerHTML = perfHtml;
 
-        // 7. Active Incidents Processing
+        // Active Incidents Processing
         const incidents = [
           ...hosts.filter(h => h.state !== 0).map(h => ({
             host: h.name, alias: h.alias, checkName: 'HOST DOWN', stateText: 'DOWN', stateCode: h.state, stateClass: 'crit', msg: h.plugin_output, ts: h.last_state_change
@@ -1395,12 +1756,18 @@ if (file_exists($phonetics_file)) {
             let stateText = 'UNKNOWN', stateClass = 'unk';
             if (s.state === 1) { stateText = 'WARNING'; stateClass = 'warn'; }
             if (s.state === 2) { stateText = 'CRITICAL'; stateClass = 'crit'; }
-
             return {
               host: s.host_name, alias: parentHost ? parentHost.alias : s.host_name, checkName: s.description, stateText: stateText, stateCode: s.state, stateClass: stateClass, msg: s.plugin_output, ts: s.last_state_change
             };
           })
         ];
+
+        // STRICT CELEBRATION SEQUENCING
+        if (previousOverallHealth !== null && previousOverallHealth < 100 && overallSla === 100 && incidents.length === 0) {
+          window.celebrationPending = true;
+          dispatchSpeechEvent('celebration', "Sensors report infrastructure health has reached 100 percent. Outstanding work team.", {});
+        }
+        previousOverallHealth = overallSla;
 
         if (!hasAnnouncedOnline) {
           hasAnnouncedOnline = true;
@@ -1411,15 +1778,14 @@ if (file_exists($phonetics_file)) {
         incidents.forEach(inc => {
           const key = `${inc.host}_${inc.checkName}`;
           const lastState = spokenIncidents.get(key);
-
           if (lastState === undefined || lastState !== inc.stateCode) {
             spokenIncidents.set(key, inc.stateCode);
-            newIncidentsToAnnounce.push(inc);
+            if (!isInitialLoad) newIncidentsToAnnounce.push(inc);
           }
         });
 
         if (newIncidentsToAnnounce.length > 0) {
-          dispatchBatchIncidents(newIncidentsToAnnounce);
+          dispatchBatchIncidents(newIncidentsToAnnounce, hDown);
         }
 
         const newRecoveriesToAnnounce = [];
@@ -1466,9 +1832,13 @@ if (file_exists($phonetics_file)) {
           `).join('');
         }
 
+        // Lift initial load lock so subsequent state changes trigger audio alerts
+        isInitialLoad = false;
+
       } catch (e) {
         consecutiveFailures++;
         if (consecutiveFailures >= 2) {
+          uiAborted = true;
           document.getElementById('connection-lost-overlay').classList.add('active');
         }
       }
