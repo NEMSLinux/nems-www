@@ -8,6 +8,21 @@ if (file_exists($conf_file)) {
         $tv_24h = (int)$matches[1];
     }
 }
+
+// Load Phonetic Dictionary from phonetics.conf
+$phonetics_file = __DIR__ . '/phonetics.conf';
+$phonetics_map = [];
+if (file_exists($phonetics_file)) {
+    $lines = file($phonetics_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (empty($line) || $line[0] === '#') continue;
+        $parts = explode('=', $line, 2);
+        if (count($parts) === 2) {
+            $phonetics_map[trim($parts[0])] = trim($parts[1]);
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -18,7 +33,7 @@ if (file_exists($conf_file)) {
   <style>
     :root {
       --bg: #050811;
-      --panel-bg: rgba(10, 16, 28, 0.88);
+      --panel-bg: rgba(10, 16, 28, 0.65);
       --border: rgba(0, 240, 255, 0.25);
       --cyan: #00f0ff;
       --green: #00ff88;
@@ -42,12 +57,40 @@ if (file_exists($conf_file)) {
       font-family: var(--font);
       display: flex;
       flex-direction: column;
-      background-image: 
-        radial-gradient(circle at 50% 50%, rgba(0,240,255,0.04) 0%, transparent 75%),
-        linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
-      background-size: 100% 100%, 25px 25px, 25px 25px;
       transition: cursor 0.2s ease;
+    }
+
+    /* BACKGROUND CANVAS FOR SUBTLE ELECTRIFIED GRID */
+    #bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: -10;
+      pointer-events: none;
+    }
+
+    /* CONNECTION OVERLAY */
+    #connection-lost-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(5, 8, 17, 0.94);
+      z-index: 9999;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(8px);
+    }
+    #connection-lost-overlay.active { display: flex; }
+    .lost-title { font-size: 2.2rem; font-weight: bold; color: var(--crit); letter-spacing: 4px; text-shadow: 0 0 20px var(--crit); margin-bottom: 8px; }
+    .lost-sub { font-size: 0.85rem; color: #8a9bb0; letter-spacing: 2px; }
+
+    /* CELEBRATION CANVAS */
+    #fireworks-canvas {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 9998;
     }
 
     header {
@@ -82,11 +125,12 @@ if (file_exists($conf_file)) {
       display: flex;
       flex-direction: column;
       clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
-      box-shadow: inset 0 0 15px rgba(0,240,255,0.05);
+      box-shadow: inset 0 0 15px rgba(0,240,255,0.03);
       min-height: 0;
+      backdrop-filter: blur(4px);
     }
 
-    .left-module { margin-bottom: 12px; }
+    .left-module { margin-bottom: 10px; flex-shrink: 0; }
     .left-module.fill-module {
       margin-bottom: 0;
       flex: 1;
@@ -120,17 +164,18 @@ if (file_exists($conf_file)) {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 10px;
-      background: rgba(0,240,255,0.02);
+      background: rgba(0, 240, 255, 0.03);
       border: 1px solid var(--border);
       padding: 8px;
       border-radius: 4px;
+      backdrop-filter: blur(4px);
     }
     .gauge-box { text-align: center; }
     .gauge-val { font-size: 1.6rem; font-weight: bold; color: var(--cyan); text-shadow: 0 0 10px var(--cyan); }
     .gauge-lbl { font-size: 0.62rem; color: #8a9bb0; letter-spacing: 1px; margin-top: 2px; }
 
     .matrix-container {
-      background: rgba(0,0,0,0.3);
+      background: rgba(0, 0, 0, 0.35);
       border: 1px solid var(--border);
       padding: 12px;
       overflow: hidden;
@@ -138,17 +183,48 @@ if (file_exists($conf_file)) {
       display: flex;
       flex-direction: column;
       min-height: 0;
+      position: relative;
+      backdrop-filter: blur(4px);
     }
+
+    #page-indicator {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      color: var(--cyan);
+      font-size: 0.72rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      background: rgba(0, 240, 255, 0.1);
+      padding: 2px 8px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+    }
+
+    .node-grid-wrapper {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+      margin-top: 4px;
+    }
+
     .node-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 10px;
-      transition: opacity 0.4s ease-in-out;
+      height: 100%;
+      align-content: start;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
     }
-    .node-grid.fade-out { opacity: 0; }
-    
+
+    .node-grid.sliding-out {
+      transform: translateX(-30px);
+      opacity: 0;
+    }
+
     .node-card {
-      background: rgba(15, 23, 42, 0.75);
+      background: rgba(15, 23, 42, 0.60);
       border: 1px solid var(--border);
       padding: 10px 12px;
       border-radius: 6px;
@@ -156,18 +232,14 @@ if (file_exists($conf_file)) {
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+      transition: border-color 0.3s ease, background 0.3s ease;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+      backdrop-filter: blur(4px);
     }
     .node-card.ok { border-color: rgba(0,255,136,0.4); box-shadow: inset 0 0 10px rgba(0,255,136,0.05); }
-    .node-card.warn { border-color: var(--warn); background: rgba(255,170,0,0.08); }
-    .node-card.crit { border-color: var(--crit); background: rgba(255,0,85,0.12); box-shadow: 0 0 15px rgba(255,0,85,0.3); animation: pulse-card 1.5s infinite alternate; }
-    .node-card.unk { border-color: var(--unknown); background: rgba(168,85,247,0.08); }
-
-    @keyframes pulse-card {
-      0% { transform: scale(0.99); }
-      100% { transform: scale(1.01); }
-    }
+    .node-card.warn { border-color: var(--warn); background: rgba(255,170,0,0.15); }
+    .node-card.crit { border-color: var(--crit); background: rgba(255,0,85,0.20); box-shadow: 0 0 15px rgba(255,0,85,0.3); }
+    .node-card.unk { border-color: var(--unknown); background: rgba(168,85,247,0.15); }
 
     .node-header { margin-bottom: 6px; }
     .node-name {
@@ -204,7 +276,7 @@ if (file_exists($conf_file)) {
     }
 
     .chart-box {
-      background: rgba(0,0,0,0.2);
+      background: rgba(0, 0, 0, 0.30);
       border: 1px solid var(--border);
       padding: 8px 10px 4px 10px;
       border-radius: 4px;
@@ -212,6 +284,7 @@ if (file_exists($conf_file)) {
       flex-direction: column;
       height: 100%;
       min-height: 0;
+      backdrop-filter: blur(4px);
     }
 
     .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -224,7 +297,7 @@ if (file_exists($conf_file)) {
 
     .chat-container {
       flex: 1;
-      background: rgba(0,0,0,0.35);
+      background: rgba(0, 0, 0, 0.30);
       border: 1px solid var(--border);
       border-radius: 4px;
       padding: 8px;
@@ -264,6 +337,7 @@ if (file_exists($conf_file)) {
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* TELEMETRY METERS */
     .perf-widget {
       background: rgba(0,240,255,0.03);
       border: 1px solid var(--border);
@@ -271,20 +345,29 @@ if (file_exists($conf_file)) {
       margin-top: 4px;
       border-radius: 3px;
     }
-    .perf-title { font-size: 0.6rem; color: #8a9bb0; letter-spacing: 1px; text-transform: uppercase; }
-    .perf-val { font-size: 0.85rem; font-weight: bold; color: var(--cyan); margin-top: 2px; }
+    .perf-title { font-size: 0.6rem; color: #8a9bb0; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
 
-    .latency-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.68rem;
-      padding: 3px 0;
-      border-bottom: 1px dashed rgba(0,240,255,0.15);
+    .meter-bar-track {
+      height: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 3px;
     }
-    .latency-row:last-child { border-bottom: none; }
-    .latency-name { color: #b0c4de; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
-    .latency-ms { font-weight: bold; color: var(--warn); white-space: nowrap; margin-left: 8px; }
+    .meter-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--green));
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+
+    .dual-meter-row {
+      display: flex;
+      gap: 8px;
+      font-size: 0.7rem;
+      margin-top: 2px;
+    }
+    .meter-sub-box { flex: 1; }
 
     .incidents { flex: 1; overflow-y: auto; min-height: 0; }
     .incident-item {
@@ -337,20 +420,26 @@ if (file_exists($conf_file)) {
       line-height: 1.35;
       word-break: break-word;
     }
-
-    body.has-crit { animation: ambient-alarm 2s infinite alternate; }
-    @keyframes ambient-alarm {
-      0% { background-color: #050811; }
-      100% { background-color: #12040a; }
-    }
   </style>
 </head>
 <body>
 
+  <!-- BACKGROUND CANVAS FOR SUBTLE ELECTRIFIED GRID -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- CONNECTION OVERLAY -->
+  <div id="connection-lost-overlay">
+    <div class="lost-title">⚡ LOST CONNECTION</div>
+    <div class="lost-sub">RECONNECTING TO NEMS SERVER...</div>
+  </div>
+
+  <!-- CELEBRATION FIREWORKS CANVAS -->
+  <canvas id="fireworks-canvas"></canvas>
+
   <header>
     <div class="title-box">
       <h1>NEMS CENTRAL COMMAND</h1>
-      <span>REAL-TIME NETWORK COMMAND CENTER</span>
+      <span>REAL-TIME ENTERPRISE INFRASTRUCTURE HEALTH</span>
     </div>
     <div id="clock" style="font-size: 1rem; letter-spacing: 2px; color: var(--cyan);">--:--:--</div>
   </header>
@@ -394,7 +483,7 @@ if (file_exists($conf_file)) {
       <div class="hud-gauges">
         <div class="gauge-box">
           <div class="gauge-val" id="sla-val">100%</div>
-          <div class="gauge-lbl">OVERALL SLA</div>
+          <div class="gauge-lbl">OVERALL HEALTH</div>
         </div>
         <div class="gauge-box">
           <div class="gauge-val" id="host-health" style="color: var(--green);">100%</div>
@@ -407,11 +496,11 @@ if (file_exists($conf_file)) {
       </div>
 
       <div class="matrix-container">
-        <h2>
-          <span>MONITORED HOST NODES</span>
-          <span id="page-indicator" style="color:var(--cyan); font-size:0.7rem; font-weight:bold;">PAGE 1/1</span>
-        </h2>
-        <div class="node-grid" id="node-grid"></div>
+        <h2><span>MONITORED HOST NODES</span></h2>
+        <span id="page-indicator">PAGE 1/1</span>
+        <div class="node-grid-wrapper" id="node-grid-wrapper">
+          <div class="node-grid" id="node-grid"></div>
+        </div>
       </div>
 
       <div class="chart-box">
@@ -430,6 +519,125 @@ if (file_exists($conf_file)) {
   </div>
 
   <script>
+    // --- SUBTLE ELECTRIFIED GRID BACKGROUND ENGINE ---
+    const bgCanvas = document.getElementById('bg-canvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    let sparks = [];
+    const GRID_SIZE = 45;
+
+    let currentGridLineColor = 'rgba(0, 240, 255, 0.09)';
+    let currentSparkRgb = '0, 240, 255';
+
+    function resizeBgCanvas() {
+      bgCanvas.width = window.innerWidth;
+      bgCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeBgCanvas);
+    resizeBgCanvas();
+
+    function updateElectrifiedTheme(state) {
+      if (state === 'crit') {
+        currentGridLineColor = 'rgba(255, 0, 85, 0.12)';
+        currentSparkRgb = '255, 0, 85';
+      } else if (state === 'warn') {
+        currentGridLineColor = 'rgba(255, 170, 0, 0.12)';
+        currentSparkRgb = '255, 170, 0';
+      } else {
+        currentGridLineColor = 'rgba(0, 240, 255, 0.09)';
+        currentSparkRgb = '0, 240, 255';
+      }
+    }
+
+    function spawnElectricSpark() {
+      const isHorizontal = Math.random() > 0.5;
+      if (isHorizontal) {
+        const row = Math.floor(Math.random() * (bgCanvas.height / GRID_SIZE));
+        sparks.push({
+          x: -40,
+          y: row * GRID_SIZE,
+          length: 30 + Math.random() * 20,
+          speed: 5 + Math.random() * 4,
+          dir: 'h'
+        });
+      } else {
+        const col = Math.floor(Math.random() * (bgCanvas.width / GRID_SIZE));
+        sparks.push({
+          x: col * GRID_SIZE,
+          y: -40,
+          length: 30 + Math.random() * 20,
+          speed: 5 + Math.random() * 4,
+          dir: 'v'
+        });
+      }
+    }
+
+    function animateElectrifiedGrid() {
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+      // 1. Static Clean Grid Lines
+      bgCtx.strokeStyle = currentGridLineColor;
+      bgCtx.lineWidth = 1;
+
+      for (let x = 0; x <= bgCanvas.width; x += GRID_SIZE) {
+        bgCtx.beginPath();
+        bgCtx.moveTo(x, 0);
+        bgCtx.lineTo(x, bgCanvas.height);
+        bgCtx.stroke();
+      }
+
+      for (let y = 0; y <= bgCanvas.height; y += GRID_SIZE) {
+        bgCtx.beginPath();
+        bgCtx.moveTo(0, y);
+        bgCtx.lineTo(bgCanvas.width, y);
+        bgCtx.stroke();
+      }
+
+      // 2. Spawn Short Subtle Energy Pulses (Max 3 Active Sparks)
+      if (Math.random() < 0.03 && sparks.length < 3) {
+        spawnElectricSpark();
+      }
+
+      // 3. Render Micro-Pulse Gradient Sparks
+      sparks.forEach((s, idx) => {
+        bgCtx.lineWidth = 1.5;
+        bgCtx.shadowColor = `rgba(${currentSparkRgb}, 0.8)`;
+        bgCtx.shadowBlur = 6;
+
+        let grad;
+        if (s.dir === 'h') {
+          grad = bgCtx.createLinearGradient(s.x, s.y, s.x + s.length, s.y);
+          grad.addColorStop(0, `rgba(${currentSparkRgb}, 0)`);
+          grad.addColorStop(1, `rgba(${currentSparkRgb}, 0.75)`);
+          bgCtx.strokeStyle = grad;
+
+          bgCtx.beginPath();
+          bgCtx.moveTo(s.x, s.y);
+          bgCtx.lineTo(s.x + s.length, s.y);
+          bgCtx.stroke();
+          s.x += s.speed;
+        } else {
+          grad = bgCtx.createLinearGradient(s.x, s.y, s.x, s.y + s.length);
+          grad.addColorStop(0, `rgba(${currentSparkRgb}, 0)`);
+          grad.addColorStop(1, `rgba(${currentSparkRgb}, 0.75)`);
+          bgCtx.strokeStyle = grad;
+
+          bgCtx.beginPath();
+          bgCtx.moveTo(s.x, s.y);
+          bgCtx.lineTo(s.x, s.y + s.length);
+          bgCtx.stroke();
+          s.y += s.speed;
+        }
+
+        if (s.x > bgCanvas.width + 50 || s.y > bgCanvas.height + 50) {
+          sparks.splice(idx, 1);
+        }
+      });
+
+      bgCtx.shadowBlur = 0;
+      requestAnimationFrame(animateElectrifiedGrid);
+    }
+    animateElectrifiedGrid();
+
     // --- TV_24H SYSTEM-WIDE TIME FORMATTER ---
     const tv24hSetting = <?php echo $tv_24h; ?>;
 
@@ -471,30 +679,35 @@ if (file_exists($conf_file)) {
     window.addEventListener('mousemove', resetCursorTimer);
     resetCursorTimer();
 
-    // --- PHONETIC OVERRIDES & SPOKEN UNIT/SLASH EXPANSIONS ---
+    // --- DYNAMIC PHONETIC DICTIONARY ENGINE ---
+    const phoneticsMap = <?php echo json_encode($phonetics_map, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+
     function sanitizePhonetics(phrase) {
       if (!phrase) return '';
-      return phrase
-        .replace(/\bNagios\b/gi, 'Noggy-ose')
-        .replace(/\bSLA\b/gi, 'S L A')
-        .replace(/\bNEMS\b/gi, 'Nems')
-        .replace(/\bN\.E\.M\.S\.\b/gi, 'Nems')
-        .replace(/\bCPU\b/gi, 'C P U')
-        .replace(/\bWAN\b/gi, 'Wan')
-        .replace(/\bMB\/s\b/gi, 'megabytes per second')
-        .replace(/\bKB\/s\b/gi, 'kilobytes per second')
-        .replace(/\bMbps\b/gi, 'megabits per second')
-        .replace(/\bGbps\b/gi, 'gigabits per second')
-        .replace(/\bms\b/gi, 'milliseconds')
-        .replace(/\bGB\b/gi, 'gigabytes')
-        .replace(/\bMB\b/gi, 'megabytes')
+      let text = phrase;
+
+      // Convert raw IPv4 addresses for TTS ONLY (e.g., 10.0.0.10 -> 10 dot 0 dot 0 dot 10)
+      text = text.replace(/\b(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\b/g, '$1 dot $2 dot $3 dot $4');
+
+      // Apply dynamic dictionary rules from phonetics.conf
+      for (const [key, val] of Object.entries(phoneticsMap)) {
+        const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const isPureWord = /^\w+$/.test(key);
+        const pattern = isPureWord
+          ? new RegExp(`\\b${escapedKey}\\b`, 'gi')
+          : new RegExp(escapedKey, 'gi');
+
+        text = text.replace(pattern, val);
+      }
+
+      // Cleanup formatting, slashes, and excess whitespace
+      return text
         .replace(/([a-zA-Z0-9]+)\s*\/\s*([a-zA-Z0-9]+)/g, '$1 and $2')
         .replace(/[*_#`"'\r\n]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
     }
 
-    // --- HELPER TO GET STATE CLASS FROM CODE ---
     function getStateClass(code) {
       if (code === 1) return 'warn';
       if (code === 2) return 'crit';
@@ -502,7 +715,6 @@ if (file_exists($conf_file)) {
       return 'ok';
     }
 
-    // --- SYSTEM NOTIFICATIONS LOG STREAM ---
     function appendChatMessage(sender, text, isAi = false, stateType = '') {
       const log = document.getElementById('chat-log');
       if (!log) return;
@@ -567,10 +779,7 @@ if (file_exists($conf_file)) {
 
       try {
         window.speechSynthesis.cancel();
-
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
-        }
+        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
 
         window.currentUtterance = new SpeechSynthesisUtterance(phrase);
         window.currentUtterance.rate = 0.95;
@@ -603,7 +812,6 @@ if (file_exists($conf_file)) {
       }
     }
 
-    // --- SINGLE SPEECH DISPATCHER ---
     async function dispatchSpeechEvent(eventType, baselineText, checkData = {}) {
       let speechText = baselineText;
       let displayText = baselineText;
@@ -639,7 +847,6 @@ if (file_exists($conf_file)) {
       enqueueSpeech(displayText, speechText, isAiEngine, stateClass, senderTag);
     }
 
-    // --- BATCH INCIDENT DISPATCHER ---
     async function dispatchBatchIncidents(newIncidents) {
       if (!newIncidents || newIncidents.length === 0) return;
 
@@ -698,7 +905,6 @@ if (file_exists($conf_file)) {
       });
     }
 
-    // --- BATCH RECOVERY DISPATCHER ---
     async function dispatchBatchRecoveries(newRecoveries) {
       if (!newRecoveries || newRecoveries.length === 0) return;
 
@@ -713,7 +919,7 @@ if (file_exists($conf_file)) {
 
         dispatchSpeechEvent('recovery', baselineText, {
           host_name: item.host,
-          host_alias: hostAlias,
+          host_alias: item.hostAlias,
           service_description: item.checkName,
           state: 0,
           plugin_output: item.msg
@@ -755,7 +961,6 @@ if (file_exists($conf_file)) {
       });
     }
 
-    // --- STATIC WELCOME OVERVIEW (DYNAMIC SINGULAR/PLURAL GRAMMAR) ---
     function announceWelcomeOverview(hosts, services, incidents, overallSla) {
       const hostCount = hosts.length;
       const hostStr = hostCount === 1 ? '1 host' : `${hostCount} hosts`;
@@ -763,12 +968,12 @@ if (file_exists($conf_file)) {
 
       if (incidents.length === 0) {
         const verb = hostCount === 1 ? 'is' : 'are';
-        baselineText = `NEMS Central Command is online. All ${hostStr} ${verb} operational with an overall SLA of ${overallSla} percent.`;
+        baselineText = `NEMS Central Command is online. All ${hostStr} ${verb} operational with overall health at ${overallSla} percent.`;
       } else {
         const incCount = incidents.length;
         const verb = incCount === 1 ? 'is' : 'are';
         const incStr = incCount === 1 ? '1 active incident' : `${incCount} active incidents`;
-        baselineText = `NEMS Central Command is online. Monitoring ${hostStr} with an overall SLA of ${overallSla} percent. There ${verb} ${incStr} requiring attention.`;
+        baselineText = `NEMS Central Command is online. Monitoring ${hostStr} with overall health at ${overallSla} percent. There ${verb} ${incStr} requiring attention.`;
       }
 
       enqueueSpeech(baselineText, baselineText, false, 'ok', '[SYSTEM INIT]');
@@ -777,6 +982,8 @@ if (file_exists($conf_file)) {
     const spokenIncidents = new Map();
     const previousStateMap = new Map();
     let hasAnnouncedOnline = false;
+    let trackedHostMap = null;
+    let previousOverallHealth = null;
 
     function formatElapsed(epochSec) {
       if (!epochSec || epochSec <= 0) return 'JUST NOW';
@@ -787,9 +994,59 @@ if (file_exists($conf_file)) {
       return `${Math.floor(diff/86400)}d ${Math.floor((diff%86400)/3600)}h AGO`;
     }
 
-    // --- DYNAMIC AUTO-SCALING INFRASTRUCTURE HEALTH TIMELINE ---
+    // --- CELEBRATION FIREWORKS ENGINE ---
+    function launchFireworks() {
+      const canvas = document.getElementById('fireworks-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const colors = ['#00f0ff', '#00ff88', '#ffaa00', '#ffffff', '#a855f7'];
+
+      for (let i = 0; i < 120; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          vx: (Math.random() - 0.5) * 14,
+          vy: (Math.random() - 0.5) * 14 - 2,
+          size: Math.random() * 3 + 2,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          decay: Math.random() * 0.02 + 0.008
+        });
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+
+        particles.forEach(p => {
+          if (p.alpha > 0) {
+            active = true;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.1;
+            p.alpha -= p.decay;
+
+            ctx.globalAlpha = Math.max(0, p.alpha);
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+
+        if (active) requestAnimationFrame(render);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      render();
+    }
+
+    // --- INFRASTRUCTURE HEALTH TIMELINE CHART ---
     const SLA_STORAGE_KEY = 'nems_noc_sla_timestamps_24h';
-    const MAX_SLA_POINTS = 288; // 24 Hours capped (288 * 5-min intervals)
+    const MAX_SLA_POINTS = 288;
     const FIVE_MIN_MS = 5 * 60 * 1000;
 
     function loadSlaHistory() {
@@ -806,11 +1063,7 @@ if (file_exists($conf_file)) {
         } catch(e) {}
       }
       
-      return {
-        timestamps: [currentBucket],
-        data: [],
-        lastBucket: currentBucket
-      };
+      return { timestamps: [currentBucket], data: [], lastBucket: currentBucket };
     }
 
     function updateSlaHistory(slaVal) {
@@ -843,10 +1096,7 @@ if (file_exists($conf_file)) {
       }
 
       localStorage.setItem(SLA_STORAGE_KEY, JSON.stringify(hist));
-
-      // Dynamically reformat labels from raw timestamps to match current tv_24h setting
       const labels = hist.timestamps.map(ts => getFormattedTime(new Date(ts), false));
-
       return { labels, data: hist.data };
     }
 
@@ -872,55 +1122,60 @@ if (file_exists($conf_file)) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        layout: {
-          padding: { bottom: 2, top: 2 }
-        },
+        layout: { padding: { bottom: 2, top: 2 } },
         plugins: { legend: { display: false } },
         scales: {
           y: {
-            min: 0,
-            max: 100,
+            min: 0, max: 100,
             grid: { color: 'rgba(0, 240, 255, 0.08)' },
             ticks: { color: '#8a9bb0', font: { size: 9 }, callback: v => Math.round(v) + '%' }
           },
           x: {
             grid: { display: false },
-            ticks: {
-              display: true,
-              color: '#8a9bb0',
-              font: { size: 9 },
-              maxRotation: 0,
-              autoSkip: true,
-              maxTicksLimit: 7
-            }
+            ticks: { display: true, color: '#8a9bb0', font: { size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 7 }
           }
         }
       }
     });
 
+    // --- DYNAMIC HOST PAGINATION & SLIDE MATRIX ---
     let cachedMappedHosts = [];
     let currentHostPage = 0;
-    const PAGE_SIZE = 6;
 
-    function renderPagedHostMatrix() {
+    function calculateDynamicPageSize() {
+      const wrapper = document.getElementById('node-grid-wrapper');
+      if (!wrapper) return 6;
+      const rect = wrapper.getBoundingClientRect();
+      const colWidth = 280;
+      const rowHeight = 100;
+      const gap = 10;
+
+      const cols = Math.max(1, Math.floor((rect.width + gap) / (colWidth + gap)));
+      const rows = Math.max(1, Math.floor((rect.height + gap) / (rowHeight + gap)));
+      return Math.max(1, cols * rows);
+    }
+
+    function renderPagedHostMatrix(forceImmediate = false) {
       const grid = document.getElementById('node-grid');
       const indicator = document.getElementById('page-indicator');
+      if (!grid || !indicator) return;
 
       if (cachedMappedHosts.length === 0) {
         grid.innerHTML = `<div style="color:#8a9bb0; font-size:0.75rem;">No hosts registered</div>`;
+        indicator.innerText = `PAGE 1/1`;
         return;
       }
 
-      const totalPages = Math.ceil(cachedMappedHosts.length / PAGE_SIZE);
+      const pageSize = calculateDynamicPageSize();
+      const totalPages = Math.ceil(cachedMappedHosts.length / pageSize);
       if (currentHostPage >= totalPages) currentHostPage = 0;
 
       indicator.innerText = `PAGE ${currentHostPage + 1}/${totalPages}`;
 
-      const startIndex = currentHostPage * PAGE_SIZE;
-      const pageHosts = cachedMappedHosts.slice(startIndex, startIndex + PAGE_SIZE);
+      const startIndex = currentHostPage * pageSize;
+      const pageHosts = cachedMappedHosts.slice(startIndex, startIndex + pageSize);
 
-      grid.classList.add('fade-out');
-      setTimeout(() => {
+      const renderCards = () => {
         grid.innerHTML = pageHosts.map(h => `
           <div class="node-card ${h.compositeState}">
             <div class="node-header">
@@ -933,16 +1188,33 @@ if (file_exists($conf_file)) {
             </div>
           </div>
         `).join('');
-        grid.classList.remove('fade-out');
-      }, 200);
+      };
+
+      if (forceImmediate || totalPages === 1) {
+        renderCards();
+      } else {
+        grid.classList.add('sliding-out');
+        setTimeout(() => {
+          renderCards();
+          grid.classList.remove('sliding-out');
+        }, 350);
+      }
     }
 
     setInterval(() => {
-      if (cachedMappedHosts.length > PAGE_SIZE) {
-        currentHostPage = (currentHostPage + 1) % Math.ceil(cachedMappedHosts.length / PAGE_SIZE);
-        renderPagedHostMatrix();
+      if (cachedMappedHosts.length === 0) return;
+      const pageSize = calculateDynamicPageSize();
+      const totalPages = Math.ceil(cachedMappedHosts.length / pageSize);
+      if (totalPages > 1) {
+        currentHostPage = (currentHostPage + 1) % totalPages;
+        renderPagedHostMatrix(false);
       }
     }, 8000);
+
+    window.addEventListener('resize', () => renderPagedHostMatrix(true));
+
+    // --- MAIN API FETCH & STATE LOOP ---
+    let consecutiveFailures = 0;
 
     async function fetchNemsData() {
       try {
@@ -951,11 +1223,34 @@ if (file_exists($conf_file)) {
           fetch('/nems-api/services?Columns=host_name,description,state,plugin_output,perf_data,last_state_change').then(r => r.json())
         ]);
 
-        if (!hostsRes.success || !svcsRes.success) return;
+        if (!hostsRes.success || !svcsRes.success) throw new Error("API Failure");
+
+        // Clear Lost Connection Overlay
+        consecutiveFailures = 0;
+        document.getElementById('connection-lost-overlay').classList.remove('active');
 
         const hosts = hostsRes.content || [];
         const services = svcsRes.content || [];
 
+        // 1. Detect Added or Removed Hosts
+        if (trackedHostMap !== null) {
+          const currentHostNames = new Set(hosts.map(h => h.name));
+          
+          hosts.forEach(h => {
+            if (!trackedHostMap.has(h.name)) {
+              enqueueSpeech(`New host ${h.alias || h.name} has been added to NEMS monitoring.`, null, false, 'ok', '[SYSTEM NOTICE]');
+            }
+          });
+
+          trackedHostMap.forEach((alias, name) => {
+            if (!currentHostNames.has(name)) {
+              enqueueSpeech(`Host ${alias || name} was removed from NEMS monitoring.`, null, false, 'warn', '[SYSTEM NOTICE]');
+            }
+          });
+        }
+        trackedHostMap = new Map(hosts.map(h => [h.name, h.alias || h.name]));
+
+        // 2. Map Composite States
         cachedMappedHosts = hosts.map(h => {
           const hostSvcs = services.filter(s => s.host_name === h.name);
           let compositeState = 'ok';
@@ -978,7 +1273,7 @@ if (file_exists($conf_file)) {
           return { ...h, compositeState, statusText, svcs: hostSvcs };
         });
 
-        renderPagedHostMatrix();
+        renderPagedHostMatrix(true);
 
         const hUp = hosts.filter(h => h.state === 0).length;
         const hDown = hosts.filter(h => h.state !== 0).length;
@@ -1004,108 +1299,114 @@ if (file_exists($conf_file)) {
         document.getElementById('host-health').innerText = `${hostSla}%`;
         document.getElementById('svc-health').innerText = `${svcSla}%`;
 
-        // Real-Time SLA Timeline Chart Update
+        // 3. Update Electrified Background Theme Based on Overall State
+        if (hDown > 0 || sCrit > 0) updateElectrifiedTheme('crit');
+        else if (sWarn > 0) updateElectrifiedTheme('warn');
+        else updateElectrifiedTheme('ok');
+
+        // 4. 100% Health Celebration Trigger
+        if (previousOverallHealth !== null && previousOverallHealth < 100 && overallSla === 100) {
+          launchFireworks();
+          dispatchSpeechEvent('celebration', "Sensors report infrastructure health has reached 100 percent. Outstanding work team.", {});
+        }
+        previousOverallHealth = overallSla;
+
+        // 5. Timeline Update
         const updatedHist = updateSlaHistory(overallSla);
         slaChart.data.labels = updatedHist.labels;
         slaChart.data.datasets[0].data = updatedHist.data;
         slaChart.data.datasets[0].pointRadius = updatedHist.data.length === 1 ? 3 : 0;
         slaChart.update('none');
 
+        // 6. Smart Telemetry Meters
         const perfContainer = document.getElementById('perf-widgets');
         let perfHtml = '';
-        const latencyList = [];
+
+        let tempVal = null, humidVal = null, speedOutput = null;
 
         services.forEach(s => {
           const desc = s.description.toLowerCase();
           const output = s.plugin_output || '';
-          const perf = s.perf_data || '';
 
-          if (desc.includes('speed') || desc.includes('internet')) {
-            perfHtml += `
-              <div class="perf-widget">
-                <div class="perf-title">⚡ WAN Speedtest</div>
-                <div class="perf-val" style="font-size:0.82rem;">${output}</div>
-              </div>`;
-          } else if (desc.includes('temp') || desc.includes('room')) {
-            perfHtml += `
-              <div class="perf-widget">
-                <div class="perf-title">🌡 Ambient Temperature</div>
-                <div class="perf-val">${output}</div>
-              </div>`;
-          } else if (desc.includes('humid')) {
-            perfHtml += `
-              <div class="perf-widget">
-                <div class="perf-title">💧 Room Humidity</div>
-                <div class="perf-val" style="color:var(--green);">${output}</div>
-              </div>`;
-          }
-
-          const rtaMatch = perf.match(/rta=([0-9.]+)/i) || output.match(/([0-9.]+)\s*ms/i);
-          if (rtaMatch && rtaMatch[1]) {
-            latencyList.push({
-              checkName: s.description,
-              rtt: parseFloat(rtaMatch[1])
-            });
+          if ((desc.includes('speed') || desc.includes('internet')) && s.state === 0) {
+            speedOutput = output;
+          } else if ((desc.includes('temp') || desc.includes('room')) && s.state === 0) {
+            const m = output.match(/([0-9.]+)\s*°?[CF]/i) || output.match(/([0-9.]+)/);
+            if (m) tempVal = parseFloat(m[1]);
+          } else if (desc.includes('humid') && s.state === 0) {
+            const m = output.match(/([0-9.]+)\s*%/i) || output.match(/([0-9.]+)/);
+            if (m) humidVal = parseFloat(m[1]);
           }
         });
 
-        if (latencyList.length > 0) {
-          latencyList.sort((a, b) => b.rtt - a.rtt);
-          const topLatency = latencyList.slice(0, 4);
+        // WAN Speedtest Widget
+        if (speedOutput) {
+          const dlMatch = speedOutput.match(/Download\s*=\s*([0-9.]+)/i);
+          const ulMatch = speedOutput.match(/Upload\s*=\s*([0-9.]+)/i);
+          const dl = dlMatch ? parseFloat(dlMatch[1]) : 0;
+          const ul = ulMatch ? parseFloat(ulMatch[1]) : 0;
 
           perfHtml += `
             <div class="perf-widget">
-              <div class="perf-title" style="margin-bottom:4px;">📡 Network Latency (RTT)</div>
-              ${topLatency.map(l => `
-                <div class="latency-row">
-                  <span class="latency-name">${l.checkName}</span>
-                  <span class="latency-ms">${l.rtt.toFixed(1)} ms</span>
+              <div class="perf-title">⚡ WAN Speedtest</div>
+              <div class="dual-meter-row">
+                <div class="meter-sub-box">
+                  <span style="color:var(--cyan); font-weight:bold;">Down: ${dl.toFixed(1)} Mbps</span>
+                  <div class="meter-bar-track"><div class="meter-bar-fill" style="width: ${Math.min(100, (dl/1000)*100)}%;"></div></div>
                 </div>
-              `).join('')}
+                <div class="meter-sub-box">
+                  <span style="color:var(--green); font-weight:bold;">Up: ${ul.toFixed(1)} Mbps</span>
+                  <div class="meter-bar-track"><div class="meter-bar-fill" style="width: ${Math.min(100, (ul/1000)*100)}%; background:var(--green);"></div></div>
+                </div>
+              </div>
             </div>`;
+        }
+
+        // Thermal & Environmental Meters
+        if (tempVal !== null || humidVal !== null) {
+          perfHtml += `<div class="perf-widget"><div class="perf-title">🌡 Ambient Environment</div><div class="dual-meter-row">`;
+          
+          if (tempVal !== null) {
+            perfHtml += `
+              <div class="meter-sub-box">
+                <span style="color:var(--warn); font-weight:bold;">${tempVal.toFixed(1)}° C</span>
+                <div class="meter-bar-track"><div class="meter-bar-fill" style="width: ${Math.min(100, (tempVal/50)*100)}%; background:var(--warn);"></div></div>
+              </div>`;
+          }
+          if (humidVal !== null) {
+            perfHtml += `
+              <div class="meter-sub-box">
+                <span style="color:var(--cyan); font-weight:bold;">${humidVal.toFixed(1)}% Humidity</span>
+                <div class="meter-bar-track"><div class="meter-bar-fill" style="width: ${Math.min(100, humidVal)}%;"></div></div>
+              </div>`;
+          }
+          perfHtml += `</div></div>`;
         }
 
         perfContainer.innerHTML = perfHtml;
 
-        // Active Incidents
+        // 7. Active Incidents Processing
         const incidents = [
           ...hosts.filter(h => h.state !== 0).map(h => ({
-            host: h.name,
-            alias: h.alias,
-            checkName: 'HOST DOWN',
-            stateText: 'DOWN',
-            stateCode: h.state,
-            stateClass: 'crit',
-            msg: h.plugin_output,
-            ts: h.last_state_change
+            host: h.name, alias: h.alias, checkName: 'HOST DOWN', stateText: 'DOWN', stateCode: h.state, stateClass: 'crit', msg: h.plugin_output, ts: h.last_state_change
           })),
           ...services.filter(s => s.state !== 0).map(s => {
             const parentHost = hosts.find(h => h.name === s.host_name);
-            let stateText = 'UNKNOWN';
-            let stateClass = 'unk';
+            let stateText = 'UNKNOWN', stateClass = 'unk';
             if (s.state === 1) { stateText = 'WARNING'; stateClass = 'warn'; }
             if (s.state === 2) { stateText = 'CRITICAL'; stateClass = 'crit'; }
 
             return {
-              host: s.host_name,
-              alias: parentHost ? parentHost.alias : s.host_name,
-              checkName: s.description,
-              stateText: stateText,
-              stateCode: s.state,
-              stateClass: stateClass,
-              msg: s.plugin_output,
-              ts: s.last_state_change
+              host: s.host_name, alias: parentHost ? parentHost.alias : s.host_name, checkName: s.description, stateText: stateText, stateCode: s.state, stateClass: stateClass, msg: s.plugin_output, ts: s.last_state_change
             };
           })
         ];
 
-        // 1. Static Welcome Overview
         if (!hasAnnouncedOnline) {
           hasAnnouncedOnline = true;
           announceWelcomeOverview(hosts, services, incidents, overallSla);
         }
 
-        // 2. Batch Incidents Announcement (State-transition based, single notification per incident)
         const newIncidentsToAnnounce = [];
         incidents.forEach(inc => {
           const key = `${inc.host}_${inc.checkName}`;
@@ -1121,7 +1422,6 @@ if (file_exists($conf_file)) {
           dispatchBatchIncidents(newIncidentsToAnnounce);
         }
 
-        // 3. Batch Recoveries Announcement (Clears incident state memory)
         const newRecoveriesToAnnounce = [];
         hosts.forEach(h => {
           const key = `HOST_${h.name}`;
@@ -1138,12 +1438,7 @@ if (file_exists($conf_file)) {
           const key = `SVC_${s.host_name}_${s.description}`;
           const prevState = previousStateMap.get(key);
           if (prevState !== undefined && prevState !== 0 && s.state === 0) {
-            newRecoveriesToAnnounce.push({
-              host: s.host_name,
-              alias: parentHost ? parentHost.alias : s.host_name,
-              checkName: s.description,
-              msg: s.plugin_output
-            });
+            newRecoveriesToAnnounce.push({ host: s.host_name, alias: parentHost ? parentHost.alias : s.host_name, checkName: s.description, msg: s.plugin_output });
             spokenIncidents.delete(`${s.host_name}_${s.description}`);
           }
           previousStateMap.set(key, s.state);
@@ -1157,10 +1452,8 @@ if (file_exists($conf_file)) {
         const incidentContainer = document.getElementById('incident-list');
 
         if (incidents.length === 0) {
-          document.body.classList.remove('has-crit');
           incidentContainer.innerHTML = `<div style="text-align: center; color: var(--green); margin-top: 40px; font-size: 0.85rem;">✓ ALL SYSTEMS OPERATIONAL</div>`;
         } else {
-          if (incidents.some(i => i.stateClass === 'crit')) document.body.classList.add('has-crit');
           incidentContainer.innerHTML = incidents.map(i => `
             <div class="incident-item ${i.stateClass}">
               <div class="incident-top-line">
@@ -1174,7 +1467,10 @@ if (file_exists($conf_file)) {
         }
 
       } catch (e) {
-        console.error("NEMS API fetch failure:", e);
+        consecutiveFailures++;
+        if (consecutiveFailures >= 2) {
+          document.getElementById('connection-lost-overlay').classList.add('active');
+        }
       }
     }
 
